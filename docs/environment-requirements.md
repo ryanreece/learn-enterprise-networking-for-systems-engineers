@@ -10,7 +10,8 @@ The initial development target is:
 - Ubuntu 24.04 LTS on x86_64 or arm64
 - Docker Engine with a running Linux container daemon
 - Containerlab 0.79.0
-- Git, GNU Make, Bash, OpenSSL, `curl`, `ripgrep`, and standard Linux command-line tools
+- Git, GNU Make, Bash, OpenSSL, OpenSSH client, `curl`, `ripgrep`, and standard
+  Linux command-line tools
 
 This development target has passed the Lab 01 known-good baseline, but it is
 not yet a completed compatibility claim. The lab README records the tested
@@ -57,6 +58,7 @@ Install these before cloning and running an isolated lab:
 | GNU Make | Provide the learner command interface | `make --version` |
 | Bash | Run lifecycle scripts | `bash --version` |
 | OpenSSL | Generate and inspect lab-only certificates | `openssl version` |
+| OpenSSH client | Enter the Lab 01 diagnostic client | `ssh -V` |
 | Docker Engine | Run lab containers | `docker version` |
 | Containerlab | Create the lab topology | `containerlab version` |
 | curl | Download packages and inspect Part A HTTP transactions | `curl --version` |

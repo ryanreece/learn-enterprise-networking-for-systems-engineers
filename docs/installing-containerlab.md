@@ -14,7 +14,7 @@ On Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install -y ca-certificates curl git make openssl ripgrep
+sudo apt install -y ca-certificates curl git make openssh-client openssl ripgrep
 ```
 
 ## 2. Install Docker Engine

@@ -6,9 +6,9 @@ Given a failed HTTPS transaction, you will identify the last working stage,
 collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
-> **Implementation status:** the known-good Part B topology, deployment,
-> baseline, verification, status, and teardown workflows are implemented. The
-> four controlled failure scenarios, reset, challenge mode, and lifecycle test
+> **Implementation status:** the known-good Part B topology and deterministic
+> `dns-failure` scenario work end to end, including reset and lifecycle tests.
+> The return-route, policy-drop, wrong-certificate, and challenge-mode slices
 > are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
@@ -24,7 +24,8 @@ environment. The investigation follows six stages:
 5. TCP or UDP transport
 6. TLS, authentication, and application
 
-The intended [course] and [lab page] URLs must be confirmed before release.
+Read the [network model lesson] for the deeper explanation of this method. The
+intended public [course] and [lab page] URLs must be confirmed before release.
 
 ## 3. Time, cost, level, and tested versions
 
@@ -36,7 +37,7 @@ The intended [course] and [lab page] URLs must be confirmed before release.
 | Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
 | Last-tested tools | Containerlab 0.79.0, Docker Engine 27.5.1, OpenSSL 3.0.13 |
 | Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
-| Last baseline test | September 27, 2026 |
+| Last baseline and DNS scenario test | September 27, 2026 |
 
 The known-good baseline passed on this reference environment. The lab is not
 complete or published until every failure scenario passes the full lifecycle.
@@ -46,10 +47,10 @@ complete or published until every failure scenario passes the full lifecycle.
 Part A requires a hostname you own or are authorized to test. It makes no host
 changes.
 
-Part B will require native Linux, Docker Engine, Containerlab, Git, GNU Make,
-Bash, and initial Internet access for packages and images. Read the repository
-[environment requirements], [installation guide], and [supported platforms]
-before attempting it.
+Part B requires native Linux, Docker Engine, Containerlab, Git, GNU Make, Bash,
+OpenSSL, an OpenSSH client, and initial Internet access for packages and
+images. Read the repository [environment requirements], [installation guide],
+and [supported platforms] before attempting it.
 
 ## 5. Architecture and addressing
 
@@ -169,8 +170,8 @@ From the lab directory, run the read-only host check:
 make check
 ```
 
-It validates Linux, Docker access, Containerlab, OpenSSL, Make, and the host's
-forwarding sysctl interface. It does not deploy or change the lab.
+It validates Linux, Docker access, Containerlab, OpenSSL, OpenSSH, Make, and
+the host's forwarding sysctl interface. It does not deploy or change the lab.
 
 ## 8. Deployment
 
@@ -182,9 +183,10 @@ make deploy
 ```
 
 Deployment generates a lab-only CA, a valid certificate for `app.lab.test`,
-and a deliberately incorrect certificate for a later scenario. Private keys
-remain under the ignored `.state/` directory. Deployment then creates the
-isolated topology and applies the known-good addresses and routes.
+and a deliberately incorrect certificate for a later scenario. It also creates
+an ephemeral SSH identity for the client. Private keys remain under the ignored
+`.state/` directory. Deployment then creates the isolated topology and applies
+the known-good addresses and routes.
 
 No application port is published on the host. Containerlab creates a private
 management network named `lab01-mgmt`; the original HTTPS transaction uses
@@ -209,7 +211,136 @@ The command proves, in order:
 Save this evidence before activating any future scenario. You can repeat the
 original transaction at any time with `make verify`.
 
-## 10. Tasks and checkpoints
+## 10. Enter the client and test the six stages
+
+Open an SSH session from the **host terminal**:
+
+```bash
+make client
+```
+
+The helper uses the generated key and connects to the client's fixed
+management address, `172.31.1.10`. The equivalent command is:
+
+```bash
+ssh -i .state/ssh/id_ed25519 \
+  -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=accept-new \
+  -o UserKnownHostsFile=.state/ssh/known_hosts \
+  root@172.31.1.10
+```
+
+The prompt that opens is the **client container**. Run the following checks
+there. Type `exit` to return to the host. These are observations, not a script:
+record what each command proves and stop where the evidence stops.
+
+### Stage 1 — Name resolution
+
+```bash
+dig app.lab.test
+dig @10.10.3.53 app.lab.test
+```
+
+The first query exercises the client's configured resolver; the second asks
+the lab DNS service explicitly. An answer proves only that DNS returned an
+address, not that the application is reachable.
+
+### Stage 2 — Local delivery
+
+```bash
+ip -brief address
+ip neighbor show
+ip route get 10.10.3.53
+```
+
+These show local interfaces, learned neighbor mappings, and how the directly
+connected DNS address will be reached. They do not prove the routed application
+path.
+
+### Stage 3 — Forward and return path
+
+```bash
+ip route get 10.10.2.10
+traceroute -n -T -p 443 10.10.2.10
+```
+
+The route lookup should select `10.10.1.1` on `eth1`; TCP traceroute should
+show the router and application. A route existing locally does not prove the
+return path works.
+
+### Stage 4 — Policy and translation
+
+On the **client**, observe the target flow while repeating a connection test
+in a second client session:
+
+```bash
+tcpdump -ni eth1 'host 10.10.2.10 and tcp port 443'
+```
+
+Policy lives at the router boundary, so client evidence alone cannot prove
+what the router accepted, dropped, or translated. From a second **host
+terminal**, enter the router:
+
+```bash
+docker exec -it clab-lab01-router bash
+```
+
+Then inspect policy and connection tracking inside the **router container**:
+
+```bash
+nft list ruleset
+conntrack -L -p tcp
+tcpdump -ni eth1 'host 10.10.2.10 and tcp port 443'
+tcpdump -ni eth2 'host 10.10.1.10 and tcp port 443'
+```
+
+Compare the client-side and application-side interfaces. Stop each capture
+with Ctrl-C and type `exit` to return to the host.
+
+### Stage 5 — TCP transport
+
+Back in the **client container**, run:
+
+```bash
+nc -vz -w 3 10.10.2.10 443
+ss -tn
+```
+
+A successful connection proves that TCP/443 completed. It does not prove TLS
+identity, trust, or the expected application response.
+
+### Stage 6 — TLS and application
+
+```bash
+openssl s_client \
+  -connect 10.10.2.10:443 \
+  -servername app.lab.test \
+  -CAfile /etc/lab/ca.crt \
+  -verify_hostname app.lab.test \
+  -verify_return_error </dev/null
+
+curl --verbose \
+  --cacert /etc/lab/ca.crt \
+  https://app.lab.test/
+```
+
+OpenSSL explicitly checks the expected name and lab trust chain. Curl repeats
+the original transaction, including DNS, TCP, TLS validation, and HTTP.
+
+When DNS is suspect, this **diagnostic bypass** holds the destination address
+constant while retaining the correct TLS name:
+
+```bash
+curl --verbose \
+  --resolve app.lab.test:443:10.10.2.10 \
+  --cacert /etc/lab/ca.crt \
+  https://app.lab.test/
+```
+
+That result can isolate DNS from later stages, but it is not proof of repair.
+`make verify` deliberately does not bypass DNS.
+
+## 11. Tasks and checkpoints
 
 For each scenario:
 
@@ -221,30 +352,45 @@ For each scenario:
 6. Repair the actual state without using `reset`.
 7. Run `make verify` to repeat the original HTTPS transaction.
 
-## 11. Break and troubleshoot scenarios
+## 12. Break and troubleshoot scenarios
 
-The first implementation will provide four deterministic, idempotent, and
-reversible scenarios:
+The planned core set contains four deterministic, idempotent, and reversible
+scenarios. Only `dns-failure` is currently available:
 
-| Scenario | Learner-visible boundary |
-| --- | --- |
-| `dns-failure` | Name resolution fails or returns the wrong lab address. |
-| `return-route` | The request travels forward, but the response cannot return. |
-| `policy-drop` | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
-| `wrong-certificate` | TCP succeeds, but certificate validation for `app.lab.test` fails. |
+| Scenario | Status | Learner-visible boundary |
+| --- | --- | --- |
+| `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
+| `return-route` | Planned | The request travels forward, but the response cannot return. |
+| `policy-drop` | Planned | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
+| `wrong-certificate` | Planned | TCP succeeds, but certificate validation for `app.lab.test` fails. |
 
-The eventual interface will be:
+From the **host terminal**, activate the implemented scenario:
 
 ```bash
 make scenario SCENARIO=dns-failure
-make challenge
 make status
 ```
 
 Normal learner output will describe only the symptom and task. Mutation detail
-will be reserved for instructor/debug evidence.
+is reserved for ignored instructor/debug state. Enter the client, work through
+the six stages, repair the DNS state, and run `make verify` from the host.
 
-## 12. Verification
+CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
+reloads it when its SOA serial increases. This is the state to inspect and
+repair after the evidence identifies DNS as the failing stage. `make reset`
+restores and verifies the baseline if you need an escape hatch; it is not the
+normal learner repair.
+
+Maintainers can exercise deployment, two consecutive scenario applications,
+failure assertions, reset, verification, and teardown with:
+
+```bash
+make test
+```
+
+The test always tears down its topology, including after a failed assertion.
+
+## 13. Verification
 
 The command:
 
@@ -257,21 +403,22 @@ requires the expected DNS answer, TCP/443, a trusted certificate with the
 expected identity, and the exact application response. Ping, an open port
 alone, or an arbitrary HTTP response does not count as repair evidence.
 
-## 13. Teardown and cost control
+## 14. Teardown and cost control
 
 Run `make destroy` when finished. It removes only the `lab01` topology, its
 Containerlab directory, and locally generated `.state/` files. It is safe to
 repeat after a partial deployment. No public cloud resources are created. Do
 not use broad Docker cleanup commands on a shared host.
 
-## 14. Troubleshooting the lab environment
+## 15. Troubleshooting the lab environment
 
 Use the repository's [environment troubleshooting guide] for Docker,
 Containerlab, image, permission, or host-kernel problems. Keep those separate
 from the deliberate in-lab faults that form the exercise.
 
-## 15. Related lesson and source links
+## 16. Related lesson and source links
 
+- [The Network Model I Use to Troubleshoot Everything][network model lesson]
 - [Enterprise Networking for Systems Engineers course][course]
 - [Locate the Failing Stage of a Connection lab page][lab page]
 - [Containerlab documentation]
@@ -283,4 +430,5 @@ from the deliberate in-lab faults that form the exercise.
 [environment troubleshooting guide]: ../../docs/troubleshooting-the-lab-environment.md
 [installation guide]: ../../docs/installing-containerlab.md
 [lab page]: https://reece.ai/labs/locate-the-failing-stage-of-a-connection
+[network model lesson]: http://localhost:3000/learn/enterprise-networking/network-model
 [supported platforms]: ../../docs/supported-platforms.md
