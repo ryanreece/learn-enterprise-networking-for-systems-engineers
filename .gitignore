@@ -1,0 +1,23 @@
+# Generated lab state
+clab-*/
+labs/**/.state/
+labs/**/generated/
+labs/**/captures/
+
+# Locally generated certificates and keys
+labs/**/configs/certificates/*.crt
+labs/**/configs/certificates/*.csr
+labs/**/configs/certificates/*.key
+labs/**/configs/certificates/*.pem
+
+# Packet captures and logs
+*.pcap
+*.pcapng
+*.log
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
