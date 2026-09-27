@@ -81,9 +81,8 @@ docker ps -a
 docker network ls
 ```
 
-Use only the lab's future `make destroy` target to remove its named resources.
-Do not delete all Docker networks or containers. The destroy workflow will be
-implemented alongside the Lab 01 topology.
+Use only the lab's `make destroy` target to remove its named resources. Do not
+delete all Docker networks or containers.
 
 ## Host firewall or security policy conflicts
 

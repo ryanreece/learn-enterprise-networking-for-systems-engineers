@@ -14,7 +14,7 @@ On Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install -y ca-certificates curl git make ripgrep
+sudo apt install -y ca-certificates curl git make openssl ripgrep
 ```
 
 ## 2. Install Docker Engine
@@ -70,10 +70,9 @@ From the repository root:
 make check
 ```
 
-This check is read-only. In the current documentation phase it confirms that
-Docker and Containerlab exist and that the current user can reach the Docker
-daemon. Lab-specific kernel and topology checks will be added with Lab 01's
-lifecycle scripts.
+This root check is read-only. It confirms that Docker and Containerlab exist
+and that the current user can reach the Docker daemon. Lab 01 provides a more
+specific `make check` from its own directory.
 
 If validation fails, see [Troubleshooting the Lab Environment].
 

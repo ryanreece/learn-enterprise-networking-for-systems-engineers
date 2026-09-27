@@ -6,10 +6,10 @@ Given a failed HTTPS transaction, you will identify the last working stage,
 collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
-> **Implementation status:** shared client and router images plus documentation
-> skeleton. Part B has no topology, lab lifecycle, or runnable scenarios yet.
-> Commands described as future lifecycle commands will be added in later
-> implementation slices.
+> **Implementation status:** the known-good Part B topology, deployment,
+> baseline, verification, status, and teardown workflows are implemented. The
+> four controlled failure scenarios, reset, challenge mode, and lifecycle test
+> are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -30,16 +30,16 @@ The intended [course] and [lab page] URLs must be confirmed before release.
 
 | Attribute | Current value |
 | --- | --- |
-| Estimated time | To be measured after the lab is implemented |
+| Estimated time | To be measured after the failure scenarios are implemented |
 | Cost | No cloud cost; local compute, storage, and download usage only |
 | Level | Foundational |
-| Reference host | Ubuntu 24.04 LTS |
-| Development-target Containerlab | 0.79.0 |
-| Last end-to-end test | Not yet run; Part B is not implemented |
+| Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
+| Last-tested tools | Containerlab 0.79.0, Docker Engine 27.5.1, OpenSSL 3.0.13 |
+| Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
+| Last baseline test | September 27, 2026 |
 
-The development target is not a compatibility claim. This table will record
-the actual date and complete tested version set after every scenario passes on
-a clean reference host.
+The known-good baseline passed on this reference environment. The lab is not
+complete or published until every failure scenario passes the full lifecycle.
 
 ## 4. Prerequisites and supported platforms
 
@@ -58,24 +58,25 @@ application will not use the host network or publish HTTPS outside the lab.
 
 ```mermaid
 flowchart LR
-    client["Client<br/>10.10.1.10"] --> router["Router / firewall<br/>10.10.1.1 and 10.10.2.1"]
+    client["Client<br/>10.10.1.10<br/>10.10.3.10"] --> router["Router / firewall<br/>10.10.1.1 and 10.10.2.1"]
     router --> web["HTTPS application<br/>10.10.2.10"]
-    client --> dns["DNS<br/>10.10.1.53"]
+    client --> dns["DNS<br/>10.10.3.53"]
 ```
 
-This table is the proposed addressing contract for the topology slice. The
-future shared lab configuration must consume these values rather than repeat
-unrelated address literals across scripts.
+[`configs/lab.env`](configs/lab.env) is the executable source of truth for
+names, images, and addresses. This table mirrors it for learners.
 
 | Segment or name | Value | Purpose |
 | --- | --- | --- |
-| Client segment | `10.10.1.0/24` | Client, DNS, and router client-facing link |
-| Client | `10.10.1.10` | Origin of the diagnostic transaction |
-| DNS | `10.10.1.53` | Lab-local authoritative resolver |
-| Router, client side | `10.10.1.1` | Client default gateway and policy boundary |
+| Client segment | `10.10.1.0/24` | Client-to-router link |
+| Client, routed link | `10.10.1.10` | Origin of the HTTPS transaction |
+| Router, client side | `10.10.1.1` | Application next hop and policy boundary |
 | Application segment | `10.10.2.0/24` | Router-to-server link |
 | Router, application side | `10.10.2.1` | Application-side gateway and observation point |
 | HTTPS application | `10.10.2.10` | TLS and HTTP endpoint |
+| DNS segment | `10.10.3.0/24` | Direct client-to-DNS link |
+| Client, DNS link | `10.10.3.10` | Source of lab DNS queries |
+| DNS | `10.10.3.53` | Lab-local authoritative resolver |
 | Application name | `app.lab.test` | Original transaction hostname |
 | Application service | TCP/443 | Original transaction transport |
 
@@ -162,37 +163,42 @@ evidence. Avoid treating ping as proof of HTTPS health.
 
 ## 7. Environment validation
 
-From the repository root, the current read-only host check is:
+From the lab directory, run the read-only host check:
 
 ```bash
 make check
 ```
 
-The future lab-local `make check` will also validate required kernel behavior,
-permissions, local dependencies, and topology-specific constraints. It will
-not deploy or change the lab.
+It validates Linux, Docker access, Containerlab, OpenSSL, Make, and the host's
+forwarding sysctl interface. It does not deploy or change the lab.
 
 ## 8. Deployment
 
-The shared images can be built from the repository root:
+From this lab directory, build the local images and deploy the topology:
 
 ```bash
 make build
-make test
-```
-
-The future lab-local learner interface will begin with:
-
-```bash
 make deploy
 ```
 
-The lab-local target does not exist yet. The next vertical slice will add the
-known-good topology and declarative configuration.
+Deployment generates a lab-only CA, a valid certificate for `app.lab.test`,
+and a deliberately incorrect certificate for a later scenario. Private keys
+remain under the ignored `.state/` directory. Deployment then creates the
+isolated topology and applies the known-good addresses and routes.
+
+No application port is published on the host. Containerlab creates a private
+management network named `lab01-mgmt`; the original HTTPS transaction uses
+only the three data-plane links shown above.
 
 ## 9. Known-good baseline
 
-The future `make baseline` command will prove, in order:
+Run:
+
+```bash
+make baseline
+```
+
+The command proves, in order:
 
 1. `app.lab.test` resolves to `10.10.2.10`.
 2. The selected route crosses the router/firewall.
@@ -200,7 +206,8 @@ The future `make baseline` command will prove, in order:
 4. TLS presents the expected identity and validates against the lab CA.
 5. HTTPS returns the expected application response.
 
-Save this evidence before activating any scenario.
+Save this evidence before activating any future scenario. You can repeat the
+original transaction at any time with `make verify`.
 
 ## 10. Tasks and checkpoints
 
@@ -239,23 +246,23 @@ will be reserved for instructor/debug evidence.
 
 ## 12. Verification
 
-The future command:
+The command:
 
 ```bash
 make verify
 ```
 
-will verify the original DNS and HTTPS transaction without repairing it. A
-pass will require the expected DNS answer, TCP/443, a trusted certificate with
-the expected identity, and the expected application response. Ping, an open
-port alone, or an arbitrary HTTP response will not count as repair evidence.
+verifies the original DNS and HTTPS transaction without repairing it. A pass
+requires the expected DNS answer, TCP/443, a trusted certificate with the
+expected identity, and the exact application response. Ping, an open port
+alone, or an arbitrary HTTP response does not count as repair evidence.
 
 ## 13. Teardown and cost control
 
-The future `make destroy` command will remove only this lab's named topology
-and generated state and will be safe after partial deployment. No public cloud
-resources are planned. Do not use broad Docker cleanup commands on a shared
-host.
+Run `make destroy` when finished. It removes only the `lab01` topology, its
+Containerlab directory, and locally generated `.state/` files. It is safe to
+repeat after a partial deployment. No public cloud resources are created. Do
+not use broad Docker cleanup commands on a shared host.
 
 ## 14. Troubleshooting the lab environment
 

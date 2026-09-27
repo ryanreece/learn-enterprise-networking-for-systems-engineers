@@ -10,12 +10,12 @@ The initial development target is:
 - Ubuntu 24.04 LTS on x86_64 or arm64
 - Docker Engine with a running Linux container daemon
 - Containerlab 0.79.0
-- Git, GNU Make, Bash, `curl`, `ripgrep`, and standard Linux command-line tools
+- Git, GNU Make, Bash, OpenSSL, `curl`, `ripgrep`, and standard Linux command-line tools
 
-This is a development target, not a completed compatibility claim. Lab 01 has
-not yet been deployed and tested end to end. Its README will record the actual
-last-tested host, Docker, Containerlab, and image versions once that validation
-has occurred.
+This development target has passed the Lab 01 known-good baseline, but it is
+not yet a completed compatibility claim. The lab README records the tested
+host, Docker, Containerlab, OpenSSL, and service image versions. Full lifecycle
+validation remains pending until the failure scenarios are implemented.
 
 See [Supported Platforms](supported-platforms.md) before using another host.
 
@@ -56,21 +56,22 @@ Install these before cloning and running an isolated lab:
 | Git | Obtain and update the repository | `git --version` |
 | GNU Make | Provide the learner command interface | `make --version` |
 | Bash | Run lifecycle scripts | `bash --version` |
+| OpenSSL | Generate and inspect lab-only certificates | `openssl version` |
 | Docker Engine | Run lab containers | `docker version` |
 | Containerlab | Create the lab topology | `containerlab version` |
 | curl | Download packages and inspect Part A HTTP transactions | `curl --version` |
 | ripgrep | Run repository text validation | `rg --version` |
 
-The future Lab 01 `make check` will validate additional kernel and permission
-requirements without changing the host. The current root `make check` verifies
-that Docker and Containerlab are installed and that the Docker daemon is
-reachable.
+The Lab 01 `make check` validates Linux, its required commands, Docker access,
+and the host forwarding interface without changing the host. The root
+`make check` verifies that Docker and Containerlab are installed and that the
+Docker daemon is reachable.
 
 ## Network and safety requirements
 
 - Use only a Part A target you own or are explicitly authorized to test.
 - Allow outbound HTTPS long enough to install packages and pull images.
-- Do not bind the future lab application to a host or public interface.
+- Do not bind the lab application to a host or public interface.
 - Do not alter the host DNS, routes, firewall, hosts file, or trust store for
   Part A.
 - Keep enough access to the host or VM to recover if local firewall software

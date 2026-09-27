@@ -10,9 +10,9 @@ The Reece.AI site is the canonical curriculum and teaching interface. This
 repository holds the topologies, configurations, scripts, tests, and concise
 operational instructions needed to run the labs.
 
-> **Repository status:** Lab 01 has reusable client and router images plus a
-> documentation skeleton. No Containerlab topology or runnable lab lifecycle
-> has been implemented yet.
+> **Repository status:** Lab 01 has a runnable known-good Containerlab baseline
+> with DNS, routed HTTPS, and lab-generated TLS certificates. Controlled
+> failure scenarios are not implemented yet.
 
 ## Course links
 
@@ -73,7 +73,7 @@ development phase.
 
 | Lab | Status | Outcome |
 | --- | --- | --- |
-| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Shared images implemented; topology pending | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
+| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Known-good baseline implemented; scenarios pending | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
 
 ## Safety and cost
 

@@ -35,8 +35,8 @@ topology and will be tested in the next vertical slice.
 
 ## Runtime privileges
 
-The Dockerfiles do not grant Linux capabilities. The future Containerlab
-topology must add only the capabilities each node needs:
+The Dockerfiles do not grant Linux capabilities. Each Containerlab topology
+must add only the capabilities its nodes need. Lab 01 uses:
 
 - the diagnostic client needs `NET_RAW` for packet capture and selected probes;
 - the router needs `NET_ADMIN` for routes and nftables, plus `NET_RAW` for

@@ -1,0 +1,68 @@
+---
+name: ${LAB_NAME}
+
+mgmt:
+  network: ${LAB_MGMT_NETWORK}
+  ipv4-subnet: ${LAB_MGMT_SUBNET}
+
+topology:
+  defaults:
+    kind: linux
+    privileged: false
+
+  nodes:
+    client:
+      image: ${NETWORK_TOOLBOX_IMAGE}
+      cap-add:
+        - NET_ADMIN
+        - NET_RAW
+      binds:
+        - .state/client/resolv.conf:/etc/resolv.conf:ro
+        - .state/certificates/ca.crt:/etc/lab/ca.crt:ro
+
+    router:
+      image: ${LINUX_ROUTER_IMAGE}
+      cap-add:
+        - NET_ADMIN
+        - NET_RAW
+      sysctls:
+        net.ipv4.ip_forward: 1
+
+    dns:
+      image: ${DNS_IMAGE}
+      cap-add:
+        - NET_ADMIN
+        - NET_BIND_SERVICE
+      binds:
+        - .state/dns/Corefile:/Corefile:ro
+        - .state/dns/db.lab.test:/zones/db.lab.test:ro
+
+    web:
+      image: ${WEB_IMAGE}
+      cap-add:
+        - NET_ADMIN
+        - NET_BIND_SERVICE
+      binds:
+        - .state/web/nginx.conf:/etc/nginx/nginx.conf:ro
+        - .state/certificates/server.crt:/etc/nginx/certificates/server.crt:ro
+        - .state/certificates/server.key:/etc/nginx/certificates/server.key:ro
+
+  links:
+    - type: veth
+      endpoints:
+        - node: client
+          interface: eth1
+        - node: router
+          interface: eth1
+    - type: veth
+      endpoints:
+        - node: router
+          interface: eth2
+        - node: web
+          interface: eth1
+    - type: veth
+      endpoints:
+        - node: client
+          interface: eth2
+        - node: dns
+          interface: eth1
