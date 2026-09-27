@@ -8,7 +8,7 @@ source "${LAB_SCRIPT_DIR}/common.sh"
 scenario_name="${1:-}"
 if [[ -z "${scenario_name}" ]]; then
   printf '%s\n' 'ERROR: set SCENARIO to a supported scenario.' >&2
-  printf '%s\n' 'Supported scenarios: dns-failure' >&2
+  printf '%s\n' 'Supported scenarios: dns-failure, return-route' >&2
   exit 2
 fi
 
@@ -16,9 +16,12 @@ case "${scenario_name}" in
   dns-failure)
     "${LAB_ROOT}/scenarios/dns-failure.sh" apply
     ;;
+  return-route)
+    "${LAB_ROOT}/scenarios/return-route.sh" apply
+    ;;
   *)
     printf 'ERROR: unsupported scenario: %s\n' "${scenario_name}" >&2
-    printf '%s\n' 'Supported scenarios: dns-failure' >&2
+    printf '%s\n' 'Supported scenarios: dns-failure, return-route' >&2
     exit 2
     ;;
 esac

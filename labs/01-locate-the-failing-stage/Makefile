@@ -14,12 +14,12 @@ help: ## Show Lab 01 commands available in this implementation slice.
 	  '  make baseline  Prove DNS, routing, TCP, TLS, and HTTPS behavior.' \
 	  '  make client    Open a key-authenticated SSH session to the client.' \
 	  '  make status    Show topology and node state.' \
-	  '  make scenario SCENARIO=dns-failure' \
+	  '  make scenario SCENARIO=<name>' \
 	  '                 Apply a named failure from the known-good baseline.' \
 	  '  make reset     Restore the known-good state and verify it.' \
 	  '  make verify    Verify the original DNS and HTTPS transaction.' \
 	  '  make destroy   Remove this topology and its generated state.' \
-	  '  make test      Exercise the DNS-failure lifecycle and clean up.'
+	  '  make test      Exercise every implemented scenario and clean up.'
 
 check: ## Validate Lab 01 prerequisites.
 	@./scripts/check-prerequisites.sh
@@ -54,3 +54,4 @@ destroy: ## Remove only this lab's topology and generated state.
 
 test: build ## Exercise the implemented scenario lifecycle.
 	@./tests/test-dns-failure.sh
+	@./tests/test-return-route.sh
