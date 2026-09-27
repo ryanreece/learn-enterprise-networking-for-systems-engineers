@@ -36,9 +36,16 @@ docker exec "${CLIENT_CONTAINER}" \
 docker exec "${WEB_CONTAINER}" \
   ip route replace "${CLIENT_SUBNET}" via "${ROUTER_APP_IP}"
 
+# Scenario-owned policy is isolated in this table so reset does not disturb
+# Containerlab or Docker rules in the router namespace.
+if docker exec "${ROUTER_CONTAINER}" \
+  nft list table inet lab01 >/dev/null 2>&1; then
+  docker exec "${ROUTER_CONTAINER}" nft delete table inet lab01
+fi
+
 if [[ "$(docker exec "${ROUTER_CONTAINER}" cat /proc/sys/net/ipv4/ip_forward)" != 1 ]]; then
   printf '%s\n' 'ERROR: IPv4 forwarding is disabled on the router.' >&2
   exit 1
 fi
 
-printf '%s\n' 'Applied known-good data-plane addressing and routes.'
+printf '%s\n' 'Applied known-good data-plane addressing, routes, and policy.'
