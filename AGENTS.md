@@ -337,6 +337,25 @@ Verification must not treat ping alone, TCP alone, or a generic HTTP response as
 
 `make reset` is an escape hatch that restores the baseline. It should not be presented as the normal learner repair method.
 
+## Subsequent Lab 01 Scenarios
+
+Implement the following scenarios next:
+
+### Local-delivery failure
+
+Incorrect prefix, gateway, or neighbor behavior on the client. There's no
+usable local next hop.
+
+### Transport failure
+
+HTTPS listener has stopped on the remote server. TCP reset or connection
+refusal.
+
+### Application failure
+
+HTTPS service returns 500 error on the remote server. DNS, path, policy, TCP,
+and TLS all succeed.
+
 ## Lab documentation template
 
 Each lab README should follow this structure:
