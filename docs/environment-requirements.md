@@ -10,7 +10,7 @@ The initial development target is:
 - Ubuntu 24.04 LTS on x86_64 or arm64
 - Docker Engine with a running Linux container daemon
 - Containerlab 0.79.0
-- Git, GNU Make, Bash, `curl`, and standard Linux command-line tools
+- Git, GNU Make, Bash, `curl`, `ripgrep`, and standard Linux command-line tools
 
 This is a development target, not a completed compatibility claim. Lab 01 has
 not yet been deployed and tested end to end. Its README will record the actual
@@ -59,6 +59,7 @@ Install these before cloning and running an isolated lab:
 | Docker Engine | Run lab containers | `docker version` |
 | Containerlab | Create the lab topology | `containerlab version` |
 | curl | Download packages and inspect Part A HTTP transactions | `curl --version` |
+| ripgrep | Run repository text validation | `rg --version` |
 
 The future Lab 01 `make check` will validate additional kernel and permission
 requirements without changing the host. The current root `make check` verifies

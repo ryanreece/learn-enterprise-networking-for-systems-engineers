@@ -14,7 +14,7 @@ On Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install -y ca-certificates curl git make
+sudo apt install -y ca-certificates curl git make ripgrep
 ```
 
 ## 2. Install Docker Engine

@@ -6,9 +6,10 @@ Given a failed HTTPS transaction, you will identify the last working stage,
 collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
-> **Implementation status:** documentation skeleton. Part B has no topology,
-> images, scripts, Makefile, or runnable scenarios yet. Commands described as
-> future lifecycle commands will be added in the next implementation slices.
+> **Implementation status:** shared client and router images plus documentation
+> skeleton. Part B has no topology, lab lifecycle, or runnable scenarios yet.
+> Commands described as future lifecycle commands will be added in later
+> implementation slices.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -173,16 +174,21 @@ not deploy or change the lab.
 
 ## 8. Deployment
 
-The intended learner interface is:
+The shared images can be built from the repository root:
 
 ```bash
 make build
+make test
+```
+
+The future lab-local learner interface will begin with:
+
+```bash
 make deploy
 ```
 
-These lab-local targets do not exist yet. The next vertical slice will add
-the reusable images before a later slice adds the known-good topology and
-declarative configuration.
+The lab-local target does not exist yet. The next vertical slice will add the
+known-good topology and declarative configuration.
 
 ## 9. Known-good baseline
 
