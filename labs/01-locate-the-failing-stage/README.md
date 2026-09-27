@@ -7,9 +7,9 @@ collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology and deterministic
-> `dns-failure` and `return-route` scenarios work end to end, including reset
-> and lifecycle tests. The policy-drop, wrong-certificate, and challenge-mode
-> slices are not implemented yet.
+> `dns-failure`, `return-route`, and `policy-drop` scenarios work end to end,
+> including reset and lifecycle tests. The wrong-certificate and
+> challenge-mode slices are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -54,7 +54,7 @@ and [supported platforms] before attempting it.
 
 ## 5. Architecture and addressing
 
-Part B will use only Linux containers and freely redistributable images. The
+Part B uses only Linux containers and freely redistributable images. The
 application will not use the host network or publish HTTPS outside the lab.
 
 ```mermaid
@@ -162,6 +162,12 @@ does not substitute a shell alias on versions where one exists.
 Save the flow record and identify the last stage for which you have positive
 evidence. Avoid treating ping as proof of HTTPS health.
 
+## Part B — Troubleshoot the isolated lab
+
+The rest of this guide runs inside the deterministic Containerlab environment.
+Unless a step explicitly says otherwise, run lifecycle and `make` commands
+from the Lab 01 directory on the Linux host.
+
 ## 7. Environment validation
 
 From the lab directory, run the read-only host check:
@@ -211,7 +217,20 @@ The command proves, in order:
 Save this evidence before activating any future scenario. You can repeat the
 original transaction at any time with `make verify`.
 
-## 10. Enter the client and test the six stages
+## 10. Enter the lab nodes and test the six stages
+
+The lab provides short host-side commands for each node you need to inspect:
+
+| Command | Destination | Access method |
+| --- | --- | --- |
+| `make client` | Diagnostic client | Key-authenticated SSH |
+| `make router` | Router/firewall | Interactive container shell |
+| `make server` | HTTPS application server | Interactive container shell |
+
+Run these commands from separate host terminals when you need simultaneous
+captures or connection tests. Type `exit` to leave any node shell.
+
+### Enter the client
 
 Open an SSH session from the **host terminal**:
 
@@ -282,7 +301,7 @@ what the router accepted, dropped, or translated. From a second **host
 terminal**, enter the router:
 
 ```bash
-docker exec -it clab-lab01-router bash
+make router
 ```
 
 Then inspect policy and connection tracking inside the **router container**:
@@ -355,13 +374,13 @@ For each scenario:
 ## 12. Break and troubleshoot scenarios
 
 The planned core set contains four deterministic, idempotent, and reversible
-scenarios. `dns-failure` and `return-route` are currently available:
+scenarios. Three are currently available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
 | `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
 | `return-route` | Implemented | The request travels forward, but the response cannot return. |
-| `policy-drop` | Planned | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
+| `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
 | `wrong-certificate` | Planned | TCP succeeds, but certificate validation for `app.lab.test` fails. |
 
 From the **host terminal**, activate one implemented scenario:
@@ -370,6 +389,7 @@ From the **host terminal**, activate one implemented scenario:
 # Choose one scenario.
 make scenario SCENARIO=dns-failure
 make scenario SCENARIO=return-route
+make scenario SCENARIO=policy-drop
 make status
 ```
 
@@ -381,9 +401,10 @@ host.
 CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
 reloads it when its SOA serial increases. The application container's route to
 the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
-Use these only after evidence identifies the relevant stage. `make reset`
-restores and verifies the baseline if you need an escape hatch; it is not the
-normal learner repair.
+Router policy can be inspected with `make router` and `nft list ruleset`. Use
+these only after evidence identifies the relevant stage. `make reset` restores
+and verifies the baseline if you need an escape hatch; it is not the normal
+learner repair.
 
 Maintainers can exercise deployment, two consecutive applications of each
 scenario, failure assertions, reset, verification, and teardown with:
@@ -401,6 +422,7 @@ completing an investigation or when reviewing collected evidence:
 
 - [DNS failure solution](solutions/dns-failure.md)
 - [Return-route solution](solutions/return-route.md)
+- [Policy-drop solution](solutions/policy-drop.md)
 
 A corresponding solution document will be added with each future scenario.
 

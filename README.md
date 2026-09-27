@@ -12,8 +12,8 @@ operational instructions needed to run the labs.
 
 > **Repository status:** Lab 01 has a runnable known-good Containerlab baseline
 > with DNS, routed HTTPS, and lab-generated TLS certificates. Its deterministic
-> DNS-failure and return-route scenarios, reset paths, and lifecycle tests are
-> implemented; two controlled scenarios remain.
+> DNS-failure, return-route, and policy-drop scenarios, reset paths, and
+> lifecycle tests are implemented; one controlled scenario remains.
 
 ## Course links
 
@@ -74,7 +74,7 @@ development phase.
 
 | Lab | Status | Outcome |
 | --- | --- | --- |
-| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Baseline, DNS failure, and return-route failure implemented | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
+| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Baseline and three deterministic failures implemented | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
 
 ## Safety and cost
 
