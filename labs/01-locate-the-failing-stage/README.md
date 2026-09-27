@@ -57,9 +57,9 @@ application will not use the host network or publish HTTPS outside the lab.
 
 ```mermaid
 flowchart LR
-    client[Client<br/>10.10.1.10] --> router[Router / firewall<br/>10.10.1.1 | 10.10.2.1]
-    router --> web[HTTPS application<br/>10.10.2.10]
-    client --> dns[DNS<br/>10.10.1.53]
+    client["Client<br/>10.10.1.10"] --> router["Router / firewall<br/>10.10.1.1 and 10.10.2.1"]
+    router --> web["HTTPS application<br/>10.10.2.10"]
+    client --> dns["DNS<br/>10.10.1.53"]
 ```
 
 This table is the proposed addressing contract for the topology slice. The

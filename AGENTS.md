@@ -503,6 +503,8 @@ While working:
 - Prefer a small, executable vertical slice over broad scaffolding.
 - Keep the known-good topology working after each change.
 - Test scripts and configurations rather than assuming they work.
+- Use Conventional Commits and commit each coherent code or documentation
+  change after it has been validated.
 - Report environmental limitations honestly.
 - Do not publish images, create cloud resources, or push repository changes unless explicitly requested.
 
@@ -512,4 +514,3 @@ When handing work back:
 - List the validation commands that were run and their results.
 - Identify anything not tested and why.
 - Point to the next smallest implementation step.
-
