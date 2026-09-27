@@ -7,9 +7,9 @@ collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology and deterministic
-> `dns-failure` scenario work end to end, including reset and lifecycle tests.
-> The return-route, policy-drop, wrong-certificate, and challenge-mode slices
-> are not implemented yet.
+> `dns-failure` and `return-route` scenarios work end to end, including reset
+> and lifecycle tests. The policy-drop, wrong-certificate, and challenge-mode
+> slices are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -37,7 +37,7 @@ intended public [course] and [lab page] URLs must be confirmed before release.
 | Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
 | Last-tested tools | Containerlab 0.79.0, Docker Engine 27.5.1, OpenSSL 3.0.13 |
 | Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
-| Last baseline and DNS scenario test | September 27, 2026 |
+| Last baseline and scenario test | September 27, 2026 |
 
 The known-good baseline passed on this reference environment. The lab is not
 complete or published until every failure scenario passes the full lifecycle.
@@ -355,34 +355,38 @@ For each scenario:
 ## 12. Break and troubleshoot scenarios
 
 The planned core set contains four deterministic, idempotent, and reversible
-scenarios. Only `dns-failure` is currently available:
+scenarios. `dns-failure` and `return-route` are currently available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
 | `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
-| `return-route` | Planned | The request travels forward, but the response cannot return. |
+| `return-route` | Implemented | The request travels forward, but the response cannot return. |
 | `policy-drop` | Planned | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
 | `wrong-certificate` | Planned | TCP succeeds, but certificate validation for `app.lab.test` fails. |
 
-From the **host terminal**, activate the implemented scenario:
+From the **host terminal**, activate one implemented scenario:
 
 ```bash
+# Choose one scenario.
 make scenario SCENARIO=dns-failure
+make scenario SCENARIO=return-route
 make status
 ```
 
 Normal learner output will describe only the symptom and task. Mutation detail
 is reserved for ignored instructor/debug state. Enter the client, work through
-the six stages, repair the DNS state, and run `make verify` from the host.
+the six stages, repair the identified state, and run `make verify` from the
+host.
 
 CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
-reloads it when its SOA serial increases. This is the state to inspect and
-repair after the evidence identifies DNS as the failing stage. `make reset`
+reloads it when its SOA serial increases. The application container's route to
+the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
+Use these only after evidence identifies the relevant stage. `make reset`
 restores and verifies the baseline if you need an escape hatch; it is not the
 normal learner repair.
 
-Maintainers can exercise deployment, two consecutive scenario applications,
-failure assertions, reset, verification, and teardown with:
+Maintainers can exercise deployment, two consecutive applications of each
+scenario, failure assertions, reset, verification, and teardown with:
 
 ```bash
 make test
@@ -390,7 +394,17 @@ make test
 
 The test always tears down its topology, including after a failed assertion.
 
-## 13. Verification
+## 13. Scenario solutions
+
+The solution guides contain spoilers and exact repair steps. Use them after
+completing an investigation or when reviewing collected evidence:
+
+- [DNS failure solution](solutions/dns-failure.md)
+- [Return-route solution](solutions/return-route.md)
+
+A corresponding solution document will be added with each future scenario.
+
+## 14. Verification
 
 The command:
 
@@ -403,20 +417,20 @@ requires the expected DNS answer, TCP/443, a trusted certificate with the
 expected identity, and the exact application response. Ping, an open port
 alone, or an arbitrary HTTP response does not count as repair evidence.
 
-## 14. Teardown and cost control
+## 15. Teardown and cost control
 
 Run `make destroy` when finished. It removes only the `lab01` topology, its
 Containerlab directory, and locally generated `.state/` files. It is safe to
 repeat after a partial deployment. No public cloud resources are created. Do
 not use broad Docker cleanup commands on a shared host.
 
-## 15. Troubleshooting the lab environment
+## 16. Troubleshooting the lab environment
 
 Use the repository's [environment troubleshooting guide] for Docker,
 Containerlab, image, permission, or host-kernel problems. Keep those separate
 from the deliberate in-lab faults that form the exercise.
 
-## 16. Related lesson and source links
+## 17. Related lesson and source links
 
 - [The Network Model I Use to Troubleshoot Everything][network model lesson]
 - [Enterprise Networking for Systems Engineers course][course]
