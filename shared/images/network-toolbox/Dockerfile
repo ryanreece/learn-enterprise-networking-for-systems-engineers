@@ -16,8 +16,17 @@ RUN apk add --no-cache \
       iproute2=7.0.0-r0 \
       iputils=20250605-r2 \
       netcat-openbsd=1.234.1-r0 \
+      openssh-server=10.3_p1-r1 \
       openssl=3.5.8-r0 \
       tcpdump=4.99.6-r1 \
-      traceroute=2.1.6-r0
+      traceroute=2.1.6-r0 \
+    && passwd -d root \
+    && mkdir -p /root/.ssh /run/sshd \
+    && chmod 700 /root/.ssh
 
-CMD ["sleep", "infinity"]
+COPY sshd_config /etc/ssh/sshd_config
+COPY start-sshd.sh /usr/local/bin/start-sshd
+
+RUN chmod 755 /usr/local/bin/start-sshd
+
+CMD ["/usr/local/bin/start-sshd"]

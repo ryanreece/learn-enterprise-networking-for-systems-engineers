@@ -37,7 +37,7 @@ test_label() {
 
 test_commands \
   "${NETWORK_TOOLBOX_IMAGE}" \
-  bash dig curl ip ping traceroute nc openssl tcpdump
+  bash dig curl ip ping traceroute nc openssl sshd ssh-keygen tcpdump
 
 test_commands \
   "${LINUX_ROUTER_IMAGE}" \
@@ -50,6 +50,15 @@ for image in "${NETWORK_TOOLBOX_IMAGE}" "${LINUX_ROUTER_IMAGE}"; do
     org.opencontainers.image.source \
     https://gitlab.int.reece.ai/ryanreece/learn-enterprise-networking-for-systems-engineers
 done
+
+printf 'Testing toolbox SSH configuration\n'
+docker run \
+  --rm \
+  --network none \
+  --cap-drop ALL \
+  --entrypoint /bin/sh \
+  "${NETWORK_TOOLBOX_IMAGE}" \
+  -euc 'ssh-keygen -A >/dev/null 2>&1; mkdir -p /run/sshd; sshd -t'
 
 printf 'Testing toolbox capability boundary\n'
 docker run \

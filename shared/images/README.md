@@ -8,12 +8,16 @@ this repository.
 
 | Local tag | Purpose |
 | --- | --- |
-| `reeceai-course/network-toolbox:0.1.0` | Client diagnostics with DNS, route, transport, TLS, HTTP, and packet-capture tools |
+| `reeceai-course/network-toolbox:0.2.0` | Client diagnostics with DNS, route, transport, TLS, HTTP, packet capture, and key-only SSH access |
 | `reeceai-course/linux-router:0.1.0` | Linux forwarding and firewall diagnostics with nftables and connection tracking |
 
 Both images use Alpine 3.24.2 pinned by its multi-platform image digest, and
 their direct packages are pinned to the versions validated by this slice.
 Image names and versions are centralized in `shared/scripts/common.sh`.
+
+The toolbox SSH daemon disables password and keyboard-interactive login. Labs
+must mount an explicit `authorized_keys` file and should not publish SSH to a
+host or public interface.
 
 ## Build and test
 
