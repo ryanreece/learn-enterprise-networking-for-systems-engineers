@@ -13,15 +13,20 @@ topology:
   nodes:
     client:
       image: ${NETWORK_TOOLBOX_IMAGE}
+      mgmt-ipv4: ${CLIENT_MGMT_IP}
       cap-add:
         - NET_ADMIN
         - NET_RAW
       binds:
         - .state/client/resolv.conf:/etc/resolv.conf:ro
         - .state/certificates/ca.crt:/etc/lab/ca.crt:ro
+        - .state/ssh/authorized_keys:/root/.ssh/authorized_keys:ro
+        - .state/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
+        - .state/ssh/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
 
     router:
       image: ${LINUX_ROUTER_IMAGE}
+      mgmt-ipv4: ${ROUTER_MGMT_IP}
       cap-add:
         - NET_ADMIN
         - NET_RAW
@@ -30,6 +35,7 @@ topology:
 
     dns:
       image: ${DNS_IMAGE}
+      mgmt-ipv4: ${DNS_MGMT_IP}
       cap-add:
         - NET_ADMIN
         - NET_BIND_SERVICE
@@ -39,6 +45,7 @@ topology:
 
     web:
       image: ${WEB_IMAGE}
+      mgmt-ipv4: ${WEB_MGMT_IP}
       cap-add:
         - NET_ADMIN
         - NET_BIND_SERVICE

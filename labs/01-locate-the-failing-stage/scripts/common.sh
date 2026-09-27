@@ -38,3 +38,23 @@ require_lab_node() {
 run_on_client() {
   docker exec "${CLIENT_CONTAINER}" "$@"
 }
+
+wait_for_dns_service() {
+  local resolved_address
+
+  for _ in {1..20}; do
+    resolved_address="$(run_on_client dig \
+      +short \
+      +time=1 \
+      +tries=1 \
+      @"${DNS_IP}" \
+      "dns.${LAB_ZONE}" A 2>/dev/null | sed -n '1p' || true)"
+    if [[ "${resolved_address}" == "${DNS_IP}" ]]; then
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  printf '%s\n' 'ERROR: the lab DNS service did not become ready.' >&2
+  return 1
+}

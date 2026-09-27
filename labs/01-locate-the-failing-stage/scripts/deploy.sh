@@ -17,6 +17,7 @@ done
 
 "${LAB_SCRIPT_DIR}/render-configs.sh"
 "${LAB_SCRIPT_DIR}/generate-certificates.sh"
+"${LAB_SCRIPT_DIR}/generate-ssh-keys.sh"
 
 cd -- "${LAB_ROOT}"
 containerlab deploy --topo "${LAB_TOPOLOGY_FILE}" --reconfigure

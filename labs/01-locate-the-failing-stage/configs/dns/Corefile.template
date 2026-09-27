@@ -1,5 +1,7 @@
 __LAB_ZONE__:53 {
     errors
     log
-    file /zones/db.lab.test
+    file /zones/db.lab.test {
+        reload 1s
+    }
 }

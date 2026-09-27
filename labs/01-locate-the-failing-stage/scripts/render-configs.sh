@@ -13,6 +13,17 @@ if [[ "${app_record}" == "${APP_NAME}" || "${app_record}" == *.* ]]; then
 fi
 readonly app_record
 
+zone_serial="$(date +%s)"
+if [[ -s "${LAB_STATE_DIR}/dns/db.lab.test" ]]; then
+  current_serial="$(awk '$2 == ";" && $3 == "serial" {print $1; exit}' \
+    "${LAB_STATE_DIR}/dns/db.lab.test")"
+  if [[ "${current_serial}" =~ ^[0-9]+$ ]] \
+    && ((current_serial >= zone_serial)); then
+    zone_serial="$((current_serial + 1))"
+  fi
+fi
+readonly zone_serial
+
 mkdir -p "${LAB_STATE_DIR}/certificates" \
   "${LAB_STATE_DIR}/client" \
   "${LAB_STATE_DIR}/dns" \
@@ -25,7 +36,8 @@ printf '%s\n' \
   "\$ORIGIN ${LAB_ZONE}." \
   "\$TTL 60" \
   "@ IN SOA dns.${LAB_ZONE}. admin.${LAB_ZONE}. (" \
-  '    1 60 60 60 60' \
+  "    ${zone_serial} ; serial" \
+  '    60 60 60 60' \
   ')' \
   "@ IN NS dns.${LAB_ZONE}." \
   "dns IN A ${DNS_IP}" \
