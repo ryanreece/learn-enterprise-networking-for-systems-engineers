@@ -7,8 +7,8 @@ collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology, all four initial
-> scenarios, and the subsequent `local-delivery` scenario work end to end,
-> including reset and lifecycle tests. Challenge mode, `transport-failure`, and
+> scenarios, `local-delivery`, and `transport-failure` work end to end,
+> including reset and lifecycle tests. Challenge mode and
 > `application-failure` are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
@@ -373,8 +373,8 @@ For each scenario:
 
 ## 12. Break and troubleshoot scenarios
 
-The four initial scenarios and the first subsequent scenario are deterministic,
-idempotent, reversible, and available:
+The four initial scenarios and the first two subsequent scenarios are
+deterministic, idempotent, reversible, and available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
@@ -382,6 +382,7 @@ idempotent, reversible, and available:
 | `local-delivery` | Implemented | The client cannot resolve the configured next hop, so no HTTPS packet leaves it. |
 | `return-route` | Implemented | The request travels forward, but the response cannot return. |
 | `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
+| `transport-failure` | Implemented | The application host rejects TCP/443 because no HTTPS listener is running. |
 | `wrong-certificate` | Implemented | TCP succeeds, but certificate validation for `app.lab.test` fails. |
 
 From the **host terminal**, activate one implemented scenario:
@@ -392,6 +393,7 @@ make scenario SCENARIO=dns-failure
 make scenario SCENARIO=local-delivery
 make scenario SCENARIO=return-route
 make scenario SCENARIO=policy-drop
+make scenario SCENARIO=transport-failure
 make scenario SCENARIO=wrong-certificate
 make status
 ```
@@ -406,11 +408,12 @@ reloads it when its SOA serial increases. The application container's route to
 the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
 The client's selected next hop and neighbor state can be inspected with
 `ip route get 10.10.2.10` and `ip neighbor` after running `make client`. Router
-policy can be inspected with `make router` and `nft list ruleset`. Use
-`openssl s_client` from the client to inspect the presented TLS identity. Use
-these only after evidence identifies the relevant stage. `make reset` restores
-and verifies the baseline if you need an escape hatch; it is not the normal
-learner repair.
+policy can be inspected with `make router` and `nft list ruleset`. The HTTPS
+service process and configuration can be inspected after running `make server`.
+Use `openssl s_client` from the client to inspect the presented TLS identity.
+Use these only after evidence identifies the relevant stage. `make reset`
+restores and verifies the baseline if you need an escape hatch; it is not the
+normal learner repair.
 
 Maintainers can exercise deployment, two consecutive applications of each
 scenario, failure assertions, reset, verification, and teardown with:
@@ -430,6 +433,7 @@ completing an investigation or when reviewing collected evidence:
 - [Local-delivery solution](solutions/local-delivery.md)
 - [Return-route solution](solutions/return-route.md)
 - [Policy-drop solution](solutions/policy-drop.md)
+- [Transport-failure solution](solutions/transport-failure.md)
 - [Wrong-certificate solution](solutions/wrong-certificate.md)
 
 A corresponding solution document will be added with each future scenario.
