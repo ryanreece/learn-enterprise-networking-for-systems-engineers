@@ -10,13 +10,6 @@ The Reece.AI site is the canonical curriculum and teaching interface. This
 repository holds the topologies, configurations, scripts, tests, and concise
 operational instructions needed to run the labs.
 
-> **Repository status:** Lab 01 has a runnable known-good Containerlab baseline
-> with DNS, routed HTTPS, and lab-generated TLS certificates. Its deterministic
-> scenarios cover all four initial failures plus local-delivery, transport, and
-> application failures. Each has a deterministic reset path and lifecycle test.
-> Randomized challenge mode is implemented and exercises the same seven
-> repairable failures without identifying the selected scenario.
-
 ## Course links
 
 The following are the intended publication URLs and must be confirmed before
