@@ -465,31 +465,63 @@ For each scenario:
 
 ## Break and troubleshoot scenarios
 
-The four initial scenarios and all three subsequent scenarios are deterministic,
-idempotent, reversible, and available:
+The following scenarios are deterministic, idempotent, reversible, and
+available. From the **host terminal**, activate one implemented scenario:
 
-| Scenario | Status | Learner-visible boundary |
-| --- | --- | --- |
-| `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
-| `local-delivery` | Implemented | The client cannot resolve the configured next hop, so no HTTPS packet leaves it. |
-| `return-route` | Implemented | The request travels forward, but the response cannot return. |
-| `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
-| `transport-failure` | Implemented | The application host rejects TCP/443 because no HTTPS listener is running. |
-| `wrong-certificate` | Implemented | TCP succeeds, but certificate validation for `app.lab.test` fails. |
-| `application-failure` | Implemented | DNS through TLS succeed, but HTTPS returns status 500. |
+### DNS Failure
 
-From the **host terminal**, activate one implemented scenario:
+Name resolution fails while the later stages remain healthy.
 
-```bash
-# Choose one scenario.
+```bash title="Linux Terminal"
 make scenario SCENARIO=dns-failure
+```
+
+### Local Delivery Failure
+
+The client cannot resolve the configured next hop, so no HTTPS packet leaves
+it.
+
+```bash title="Linux Terminal"
 make scenario SCENARIO=local-delivery
+```
+
+### Return Route Failure
+
+The client cannot resolve the configured next hop, so no HTTPS packet leaves it.
+```bash title="Linux Terminal"
 make scenario SCENARIO=return-route
+```
+
+### Policy Drop Failure
+
+Correctly routed HTTPS traffic is silently dropped at the policy boundary.
+
+```bash title="Linux Terminal"
 make scenario SCENARIO=policy-drop
+```
+
+### Transport Failure
+
+The application host rejects TCP/443 because no HTTPS listener is running.
+
+```bash title="Linux Terminal"
 make scenario SCENARIO=transport-failure
+```
+
+### Wrong Certificate Failure
+
+TCP succeeds, but certificate validation for `app.lab.test` fails.
+
+```bash title="Linux Terminal"
 make scenario SCENARIO=wrong-certificate
+```
+
+### Application Failure
+
+DNS through TLS succeed, but HTTPS returns status 500.
+
+```bash title="Linux Terminal"
 make scenario SCENARIO=application-failure
-make status
 ```
 
 Normal learner output will describe only the symptom and task. Mutation detail
