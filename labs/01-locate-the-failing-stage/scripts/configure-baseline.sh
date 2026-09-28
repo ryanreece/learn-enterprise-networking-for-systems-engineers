@@ -44,14 +44,29 @@ if docker exec "${ROUTER_CONTAINER}" \
 fi
 
 # Restore the active certificate files in place because Containerlab bind
-# mounts those exact files into the running NGINX container.
-cp -- "${LAB_STATE_DIR}/certificates/valid-server.crt" \
-  "${LAB_STATE_DIR}/certificates/server.crt"
-cp -- "${LAB_STATE_DIR}/certificates/valid-server.key" \
-  "${LAB_STATE_DIR}/certificates/server.key"
-docker exec "${WEB_CONTAINER}" nginx -t >/dev/null
-docker exec "${WEB_CONTAINER}" nginx -s reload
-wait_for_tls_identity "${APP_NAME}"
+# mounts those exact files into the running NGINX container. Avoid a redundant
+# reload: back-to-back reload signals can be coalesced before the first worker
+# transition finishes.
+certificate_reloaded=false
+if ! cmp -s \
+  "${LAB_STATE_DIR}/certificates/valid-server.crt" \
+  "${LAB_STATE_DIR}/certificates/server.crt" \
+  || ! cmp -s \
+    "${LAB_STATE_DIR}/certificates/valid-server.key" \
+    "${LAB_STATE_DIR}/certificates/server.key"; then
+  cp -- "${LAB_STATE_DIR}/certificates/valid-server.crt" \
+    "${LAB_STATE_DIR}/certificates/server.crt"
+  cp -- "${LAB_STATE_DIR}/certificates/valid-server.key" \
+    "${LAB_STATE_DIR}/certificates/server.key"
+  docker exec "${WEB_CONTAINER}" nginx -t >/dev/null
+  docker exec "${WEB_CONTAINER}" nginx -s reload
+  certificate_reloaded=true
+fi
+if [[ "${certificate_reloaded}" == true ]]; then
+  wait_for_tls_identity "${APP_NAME}" 4
+else
+  wait_for_tls_identity "${APP_NAME}"
+fi
 
 if [[ "$(docker exec "${ROUTER_CONTAINER}" cat /proc/sys/net/ipv4/ip_forward)" != 1 ]]; then
   printf '%s\n' 'ERROR: IPv4 forwarding is disabled on the router.' >&2

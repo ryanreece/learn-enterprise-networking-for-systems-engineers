@@ -61,15 +61,22 @@ wait_for_dns_service() {
 
 wait_for_tls_identity() {
   local expected_name="$1"
+  local required_matches="${2:-1}"
   local certificate_details
+  local consecutive_matches=0
 
-  for _ in {1..20}; do
+  for _ in {1..40}; do
     certificate_details="$(run_on_client openssl s_client \
       -connect "${WEB_IP}:${APP_PORT}" \
       -servername "${APP_NAME}" </dev/null 2>/dev/null \
       | openssl x509 -noout -ext subjectAltName 2>/dev/null || true)"
     if [[ "${certificate_details}" == *"DNS:${expected_name}"* ]]; then
-      return 0
+      consecutive_matches="$((consecutive_matches + 1))"
+      if ((consecutive_matches >= required_matches)); then
+        return 0
+      fi
+    else
+      consecutive_matches=0
     fi
     sleep 0.25
   done

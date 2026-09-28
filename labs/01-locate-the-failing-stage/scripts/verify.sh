@@ -28,13 +28,13 @@ if ! run_on_client nc -z -w 3 "${APP_NAME}" "${APP_PORT}"; then
 fi
 printf 'PASS: TCP/%s connected.\n' "${APP_PORT}"
 
-if ! run_on_client openssl s_client \
+tls_output="$(run_on_client openssl s_client \
   -connect "${APP_NAME}:${APP_PORT}" \
   -servername "${APP_NAME}" \
   -CAfile /etc/lab/ca.crt \
   -verify_hostname "${APP_NAME}" \
-  -verify_return_error </dev/null 2>&1 \
-  | grep -q 'Verify return code: 0 (ok)'; then
+  -verify_return_error </dev/null 2>&1 || true)"
+if [[ "${tls_output}" != *'Verify return code: 0 (ok)'* ]]; then
   printf 'FAIL: TLS identity or trust validation failed for %s.\n' "${APP_NAME}" >&2
   exit 1
 fi

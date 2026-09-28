@@ -9,13 +9,16 @@ scenario_name="${1:-}"
 if [[ -z "${scenario_name}" ]]; then
   printf '%s\n' 'ERROR: set SCENARIO to a supported scenario.' >&2
   printf '%s\n' \
-    'Supported scenarios: dns-failure, return-route, policy-drop, wrong-certificate' >&2
+    'Supported scenarios: dns-failure, local-delivery, return-route, policy-drop, wrong-certificate' >&2
   exit 2
 fi
 
 case "${scenario_name}" in
   dns-failure)
     "${LAB_ROOT}/scenarios/dns-failure.sh" apply
+    ;;
+  local-delivery)
+    "${LAB_ROOT}/scenarios/local-delivery.sh" apply
     ;;
   return-route)
     "${LAB_ROOT}/scenarios/return-route.sh" apply
@@ -29,7 +32,7 @@ case "${scenario_name}" in
   *)
     printf 'ERROR: unsupported scenario: %s\n' "${scenario_name}" >&2
     printf '%s\n' \
-      'Supported scenarios: dns-failure, return-route, policy-drop, wrong-certificate' >&2
+      'Supported scenarios: dns-failure, local-delivery, return-route, policy-drop, wrong-certificate' >&2
     exit 2
     ;;
 esac

@@ -10,6 +10,7 @@ readonly DEBUG_LOG="${LAB_STATE_DIR}/scenario-debug.log"
 
 confirm_failure() {
   local certificate_details
+  local chain_output
   local resolved_address
   local response
   local tls_output
@@ -38,7 +39,7 @@ confirm_failure() {
 
   run_on_client nc -z -w 3 "${APP_NAME}" "${APP_PORT}" >/dev/null
 
-  wait_for_tls_identity "${WRONG_APP_NAME}"
+  wait_for_tls_identity "${WRONG_APP_NAME}" 4
   certificate_details="$(run_on_client openssl s_client \
     -connect "${APP_NAME}:${APP_PORT}" \
     -servername "${APP_NAME}" </dev/null 2>/dev/null \
@@ -48,12 +49,12 @@ confirm_failure() {
     return 1
   fi
 
-  if ! run_on_client openssl s_client \
+  chain_output="$(run_on_client openssl s_client \
     -connect "${APP_NAME}:${APP_PORT}" \
     -servername "${APP_NAME}" \
     -CAfile /etc/lab/ca.crt \
-    -verify_return_error </dev/null 2>&1 \
-    | grep -q 'Verify return code: 0 (ok)'; then
+    -verify_return_error </dev/null 2>&1 || true)"
+  if [[ "${chain_output}" != *'Verify return code: 0 (ok)'* ]]; then
     printf '%s\n' 'ERROR: the incorrect certificate is not signed by the lab CA.' >&2
     return 1
   fi

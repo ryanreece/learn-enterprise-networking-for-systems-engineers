@@ -5,7 +5,7 @@ LAB_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "${LAB_SCRIPT_DIR}/common.sh"
 
-for command_name in docker containerlab openssl make ssh ssh-keygen; do
+for command_name in cmp docker containerlab openssl make ssh ssh-keygen; do
   require_command "${command_name}"
 done
 

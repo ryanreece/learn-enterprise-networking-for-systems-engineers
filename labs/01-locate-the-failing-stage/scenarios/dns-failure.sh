@@ -13,6 +13,7 @@ confirm_failure() {
   local dns_status
   local resolved_address
   local response
+  local tls_output
 
   for _ in {1..20}; do
     dns_status="$(run_on_client dig \
@@ -43,13 +44,16 @@ confirm_failure() {
   fi
 
   run_on_client nc -z -w 3 "${WEB_IP}" "${APP_PORT}" >/dev/null
-  run_on_client openssl s_client \
+  tls_output="$(run_on_client openssl s_client \
     -connect "${WEB_IP}:${APP_PORT}" \
     -servername "${APP_NAME}" \
     -CAfile /etc/lab/ca.crt \
     -verify_hostname "${APP_NAME}" \
-    -verify_return_error </dev/null 2>&1 \
-    | grep -q 'Verify return code: 0 (ok)'
+    -verify_return_error </dev/null 2>&1 || true)"
+  if [[ "${tls_output}" != *'Verify return code: 0 (ok)'* ]]; then
+    printf '%s\n' 'ERROR: TLS health changed during the DNS scenario.' >&2
+    return 1
+  fi
 
   response="$(run_on_client curl \
     --silent \
