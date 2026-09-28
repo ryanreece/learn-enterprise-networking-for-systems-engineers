@@ -14,7 +14,8 @@ operational instructions needed to run the labs.
 > with DNS, routed HTTPS, and lab-generated TLS certificates. Its deterministic
 > scenarios cover all four initial failures plus local-delivery, transport, and
 > application failures. Each has a deterministic reset path and lifecycle test.
-> Challenge mode is still in development.
+> Randomized challenge mode is implemented and exercises the same seven
+> repairable failures without identifying the selected scenario.
 
 ## Course links
 
@@ -49,6 +50,7 @@ make build
 make deploy
 make baseline
 make scenario SCENARIO=<name>
+# Or: make challenge
 make verify
 make destroy
 ```
@@ -75,7 +77,7 @@ development phase.
 
 | Lab | Status | Outcome |
 | --- | --- | --- |
-| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Baseline and seven failures implemented | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
+| [01 — Locate the Failing Stage of a Connection](labs/01-locate-the-failing-stage/README.md) | Baseline, seven failures, and challenge mode implemented | Locate a failure across DNS, local delivery, path, policy, transport, and TLS/application stages. |
 
 ## Safety and cost
 

@@ -8,8 +8,8 @@ the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology, all four initial
 > scenarios, `local-delivery`, `transport-failure`, and `application-failure`
-> work end to end, including reset and lifecycle tests. Challenge mode is not
-> implemented yet.
+> work end to end, including reset and lifecycle tests. Randomized challenge
+> mode is also implemented and covered across every eligible scenario.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -406,6 +406,27 @@ is reserved for ignored instructor/debug state. Enter the client, work through
 the six stages, repair the identified state, and run `make verify` from the
 host.
 
+### Challenge mode
+
+After proving the known-good baseline, ask the lab to select one of the seven
+failures without revealing its identity:
+
+```bash
+make challenge
+make status
+```
+
+`make challenge` first restores and verifies the baseline, randomly applies one
+supported failure, and prints only the common symptom and troubleshooting task.
+`make status` reports topology and node state without naming the failure.
+
+Work through the same six stages, repair the actual state, and run
+`make verify`. The active marker records only `challenge`. Do not inspect
+`.state/scenario-debug.log`, `.state/challenge-apply.log`, or the solution
+documents during the exercise: those are instructor and maintainer artifacts
+that can disclose the answer. `make reset` remains the recovery escape hatch if
+you cannot complete a manual repair.
+
 CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
 reloads it when its SOA serial increases. The application container's route to
 the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
@@ -421,7 +442,8 @@ and verifies the baseline if you need an escape hatch; it is not the normal
 learner repair.
 
 Maintainers can exercise deployment, two consecutive applications of each
-scenario, failure assertions, reset, verification, and teardown with:
+scenario, every eligible hidden challenge, a random challenge, failure
+assertions, reset, verification, and teardown with:
 
 ```bash
 make test
@@ -442,7 +464,8 @@ completing an investigation or when reviewing collected evidence:
 - [Wrong-certificate solution](solutions/wrong-certificate.md)
 - [Application-failure solution](solutions/application-failure.md)
 
-A corresponding solution document will be added with each future scenario.
+Every scenario currently eligible for challenge mode has a corresponding
+solution document.
 
 ## 14. Verification
 
