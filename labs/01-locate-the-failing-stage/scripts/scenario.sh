@@ -8,49 +8,15 @@ source "${LAB_SCRIPT_DIR}/common.sh"
 scenario_name="${1:-}"
 if [[ -z "${scenario_name}" ]]; then
   printf '%s\n' 'ERROR: set SCENARIO to a supported scenario.' >&2
-  printf '%s\n' \
-    'Supported scenarios: application-failure, dns-failure, local-delivery, return-route, policy-drop, transport-failure, wrong-certificate' >&2
+  printf 'Supported scenarios: %s\n' "${LAB_SCENARIOS[*]}" >&2
   exit 2
 fi
 
-case "${scenario_name}" in
-  application-failure)
-    "${LAB_ROOT}/scenarios/application-failure.sh" apply
-    ;;
-  dns-failure)
-    "${LAB_ROOT}/scenarios/dns-failure.sh" apply
-    ;;
-  local-delivery)
-    "${LAB_ROOT}/scenarios/local-delivery.sh" apply
-    ;;
-  return-route)
-    "${LAB_ROOT}/scenarios/return-route.sh" apply
-    ;;
-  policy-drop)
-    "${LAB_ROOT}/scenarios/policy-drop.sh" apply
-    ;;
-  transport-failure)
-    "${LAB_ROOT}/scenarios/transport-failure.sh" apply
-    ;;
-  wrong-certificate)
-    "${LAB_ROOT}/scenarios/wrong-certificate.sh" apply
-    ;;
-  *)
-    printf 'ERROR: unsupported scenario: %s\n' "${scenario_name}" >&2
-    printf '%s\n' \
-      'Supported scenarios: application-failure, dns-failure, local-delivery, return-route, policy-drop, transport-failure, wrong-certificate' >&2
-    exit 2
-    ;;
-esac
+if ! scenario_is_supported "${scenario_name}"; then
+  printf 'ERROR: unsupported scenario: %s\n' "${scenario_name}" >&2
+  printf 'Supported scenarios: %s\n' "${LAB_SCENARIOS[*]}" >&2
+  exit 2
+fi
 
-printf '%s\n' \
-  'Scenario activated.' \
-  '' \
-  'Observed symptom:' \
-  "  The client cannot complete an HTTPS connection to ${APP_NAME}." \
-  '' \
-  'Your task:' \
-  '  1. Identify the last working stage.' \
-  '  2. Collect evidence for the failing stage.' \
-  '  3. Repair the environment.' \
-  '  4. Run make verify.'
+"${LAB_ROOT}/scenarios/${scenario_name}.sh" apply
+print_scenario_prompt

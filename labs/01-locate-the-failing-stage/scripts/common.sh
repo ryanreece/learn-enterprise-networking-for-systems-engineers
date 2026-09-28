@@ -24,6 +24,43 @@ readonly CLIENT_CONTAINER="clab-${LAB_NAME}-client"
 readonly ROUTER_CONTAINER="clab-${LAB_NAME}-router"
 readonly DNS_CONTAINER="clab-${LAB_NAME}-dns"
 readonly WEB_CONTAINER="clab-${LAB_NAME}-web"
+readonly -a LAB_SCENARIOS=(
+  dns-failure
+  local-delivery
+  return-route
+  policy-drop
+  transport-failure
+  wrong-certificate
+  application-failure
+)
+
+scenario_is_supported() {
+  local candidate="$1"
+  local supported_scenario
+
+  for supported_scenario in "${LAB_SCENARIOS[@]}"; do
+    if [[ "${candidate}" == "${supported_scenario}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+print_scenario_prompt() {
+  local activation_message="${1:-Scenario activated.}"
+
+  printf '%s\n' \
+    "${activation_message}" \
+    '' \
+    'Observed symptom:' \
+    "  The client cannot complete an HTTPS connection to ${APP_NAME}." \
+    '' \
+    'Your task:' \
+    '  1. Identify the last working stage.' \
+    '  2. Collect evidence for the failing stage.' \
+    '  3. Repair the environment.' \
+    '  4. Run make verify.'
+}
 
 require_lab_node() {
   local container_name="$1"

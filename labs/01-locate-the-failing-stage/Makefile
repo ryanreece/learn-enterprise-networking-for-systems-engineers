@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help check build deploy baseline client router server status scenario reset verify destroy test
+.PHONY: help check build deploy baseline client router server status scenario challenge reset verify destroy test
 
 help: ## Show Lab 01 commands available in this implementation slice.
 	@printf '%s\n' \
@@ -18,6 +18,7 @@ help: ## Show Lab 01 commands available in this implementation slice.
 	  '  make status    Show topology and node state.' \
 	  '  make scenario SCENARIO=<name>' \
 	  '                 Apply a named failure from the known-good baseline.' \
+	  '  make challenge Apply a random failure without revealing its identity.' \
 	  '  make reset     Restore the known-good state and verify it.' \
 	  '  make verify    Verify the original DNS and HTTPS transaction.' \
 	  '  make destroy   Remove this topology and its generated state.' \
@@ -51,6 +52,9 @@ status: ## Show topology and node state.
 scenario: ## Apply a named failure scenario.
 	@./scripts/scenario.sh "$(SCENARIO)"
 
+challenge: ## Apply a random failure without revealing its identity.
+	@./scripts/challenge.sh
+
 reset: ## Restore and verify the known-good state.
 	@./scripts/reset.sh
 
@@ -68,3 +72,4 @@ test: build ## Exercise the implemented scenario lifecycle.
 	@./tests/test-local-delivery.sh
 	@./tests/test-transport-failure.sh
 	@./tests/test-application-failure.sh
+	@./tests/test-challenge.sh
