@@ -53,7 +53,9 @@ sed \
   -e "s/__APP_PORT__/${APP_PORT}/g" \
   -e "s/__EXPECTED_RESPONSE__/${EXPECTED_RESPONSE}/g" \
   "${LAB_ROOT}/configs/web/nginx.conf.template" \
-  >"${LAB_STATE_DIR}/web/nginx.conf"
+  >"${LAB_STATE_DIR}/web/baseline-nginx.conf"
+cp -- "${LAB_STATE_DIR}/web/baseline-nginx.conf" \
+  "${LAB_STATE_DIR}/web/nginx.conf"
 
 sed "s/__APP_NAME__/${APP_NAME}/g" \
   "${LAB_ROOT}/configs/certificates/valid-server.ext.template" \

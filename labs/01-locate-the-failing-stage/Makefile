@@ -67,3 +67,4 @@ test: build ## Exercise the implemented scenario lifecycle.
 	@./tests/test-wrong-certificate.sh
 	@./tests/test-local-delivery.sh
 	@./tests/test-transport-failure.sh
+	@./tests/test-application-failure.sh

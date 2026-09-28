@@ -46,6 +46,7 @@ fi
 # Restore the active certificate files in place because Containerlab bind
 # mounts those exact files into the running NGINX container.
 certificate_changed=false
+configuration_changed=false
 if ! cmp -s \
   "${LAB_STATE_DIR}/certificates/valid-server.crt" \
   "${LAB_STATE_DIR}/certificates/server.crt" \
@@ -59,9 +60,16 @@ if ! cmp -s \
   certificate_changed=true
 fi
 
+if ! cmp -s \
+  "${LAB_STATE_DIR}/web/nginx.conf" \
+  "${LAB_STATE_DIR}/web/loaded-nginx.conf"; then
+  configuration_changed=true
+fi
+
 docker exec "${WEB_CONTAINER}" nginx -t >/dev/null
 if web_service_is_running; then
-  if [[ "${certificate_changed}" == true ]]; then
+  if [[ "${certificate_changed}" == true \
+    || "${configuration_changed}" == true ]]; then
     # Avoid redundant reloads: back-to-back signals can be coalesced before
     # the first worker transition finishes.
     docker exec "${WEB_CONTAINER}" nginx -s reload
@@ -69,13 +77,19 @@ if web_service_is_running; then
 else
   docker exec "${WEB_CONTAINER}" nginx
   certificate_changed=true
+  configuration_changed=true
 fi
 
-if [[ "${certificate_changed}" == true ]]; then
+if [[ "${certificate_changed}" == true \
+  || "${configuration_changed}" == true ]]; then
   wait_for_tls_identity "${APP_NAME}" 4
+  wait_for_https_response 200 "${EXPECTED_RESPONSE}" 4
 else
   wait_for_tls_identity "${APP_NAME}"
+  wait_for_https_response 200 "${EXPECTED_RESPONSE}"
 fi
+cp -- "${LAB_STATE_DIR}/web/nginx.conf" \
+  "${LAB_STATE_DIR}/web/loaded-nginx.conf"
 
 if [[ "$(docker exec "${ROUTER_CONTAINER}" cat /proc/sys/net/ipv4/ip_forward)" != 1 ]]; then
   printf '%s\n' 'ERROR: IPv4 forwarding is disabled on the router.' >&2
@@ -83,4 +97,4 @@ if [[ "$(docker exec "${ROUTER_CONTAINER}" cat /proc/sys/net/ipv4/ip_forward)" !
 fi
 
 printf '%s\n' \
-  'Applied known-good data-plane addressing, routes, policy, and certificate.'
+  'Applied known-good data-plane addressing, routes, policy, TLS, and application configuration.'

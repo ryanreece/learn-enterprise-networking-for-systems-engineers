@@ -91,3 +91,43 @@ wait_for_tls_identity() {
     "${expected_name}" >&2
   return 1
 }
+
+wait_for_https_response() {
+  local expected_status="$1"
+  local expected_body="$2"
+  local required_matches="${3:-1}"
+  local body
+  local consecutive_matches=0
+  local http_code
+  local output
+
+  for _ in {1..40}; do
+    output="$(run_on_client curl \
+      --silent \
+      --show-error \
+      --connect-timeout 1 \
+      --max-time 2 \
+      --cacert /etc/lab/ca.crt \
+      --write-out '|%{http_code}' \
+      "https://${APP_NAME}:${APP_PORT}/" 2>/dev/null || true)"
+    http_code="${output##*|}"
+    body="${output%|*}"
+    while [[ "${body}" == *$'\n' ]]; do
+      body="${body%$'\n'}"
+    done
+    if [[ "${http_code}" == "${expected_status}" \
+      && "${body}" == "${expected_body}" ]]; then
+      consecutive_matches="$((consecutive_matches + 1))"
+      if ((consecutive_matches >= required_matches)); then
+        return 0
+      fi
+    else
+      consecutive_matches=0
+    fi
+    sleep 0.25
+  done
+
+  printf 'ERROR: HTTPS did not return the expected status and body: %s %s.\n' \
+    "${expected_status}" "${expected_body}" >&2
+  return 1
+}
