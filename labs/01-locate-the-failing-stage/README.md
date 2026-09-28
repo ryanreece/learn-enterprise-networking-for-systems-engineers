@@ -1,21 +1,19 @@
 # Lab 01: Locate the Failing Stage of a Connection
 
-## 1. Lab outcome
+## Lab outcome
 
 Given a failed HTTPS transaction, you will identify the last working stage,
 collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
-> **Implementation status:** the known-good Part B topology, all four initial
-> scenarios, `local-delivery`, `transport-failure`, and `application-failure`
-> work end to end, including reset and lifecycle tests. Randomized challenge
-> mode is also implemented and covered across every eligible scenario.
+## Implementation status
 
-## 2. Relationship to the Reece.AI lesson
+This lab supplements [**The Network Model I Use to Troubleshoot
+Everything**](/learn/enterprise-networking/network-model). The lesson supplies
+the mental framework to understand network troubleshooting for systems
+engineers and this lab puts the concepts into practice.
 
-This lab supports **The Network Model I Use to Troubleshoot Everything**. The
-lesson supplies the mental model; this repository will supply the executable
-environment. The investigation follows six stages:
+The investigation follows six stages:
 
 1. Name resolution
 2. Local delivery
@@ -24,10 +22,7 @@ environment. The investigation follows six stages:
 5. TCP or UDP transport
 6. TLS, authentication, and application
 
-Read the [network model lesson] for the deeper explanation of this method. The
-intended public [course] and [lab page] URLs must be confirmed before release.
-
-## 3. Time, cost, level, and tested versions
+## Time, cost, level, and tested versions
 
 | Attribute | Current value |
 | --- | --- |
@@ -43,7 +38,7 @@ The known-good baseline and every named scenario passed on this reference
 environment. The lab remains in development until challenge mode and a clean
 learner walkthrough are complete.
 
-## 4. Prerequisites and supported platforms
+## Prerequisites and supported platforms
 
 Part A requires a hostname you own or are authorized to test. It makes no host
 changes.
@@ -53,7 +48,7 @@ OpenSSL, an OpenSSH client, and initial Internet access for packages and
 images. Read the repository [environment requirements], [installation guide],
 and [supported platforms] before attempting it.
 
-## 5. Part A — Observe a real connection
+## Part A — Observe a real connection
 
 Only test a target you own or are explicitly authorized to test. These steps
 observe state and send ordinary DNS, TCP, TLS, and HTTP requests. They must not
@@ -73,48 +68,134 @@ Create a record before troubleshooting:
 | Observation time and time zone | |
 | Expected result | Validated TLS and the expected HTTPS response |
 
+---
+
 ### Linux observations
 
-Set `TARGET` to the authorized hostname and, after resolving it, set `ADDRESS`
-to one returned address:
+Set `TARGET` to the authorized hostname you want to test:
 
-```bash
-TARGET=example.test
-ADDRESS=192.0.2.10
+```bash title="Linux Terminal"
+export TARGET="reece.ai"
 
-date -Is
-ip address show
-dig "$TARGET"
-ip neighbor show
-ip route get "$ADDRESS"
-nc -vz "$TARGET" 443
-openssl s_client -connect "${TARGET}:443" -servername "$TARGET" </dev/null
-curl --verbose --connect-timeout 5 "https://${TARGET}/"
+# Query the A record for the target and display the responding DNS server.
+dig "$TARGET" A
+
+# Save the first returned IPv4 address.
+export ADDRESS="$(dig +short A "$TARGET" | head -n 1)"
+
+# Confirm the values used by the remaining tests.
+printf 'Target:  %s\nAddress: %s\n' "$TARGET" "$ADDRESS"
 ```
 
-Replace the documentation-only example values before running the commands.
-`192.0.2.10` is a reserved documentation address and is not a test target.
+Observe various connection methods from your machine to the `$TARGET`:
+
+```bash title="Linux Terminal"
+# Record the current date and time, including the local UTC offset.
+date -Is
+
+# Show the addresses assigned to each local network interface.
+ip -brief address
+
+# Show the route, outgoing interface, next hop, and source address
+# the local host would use to reach the selected destination address.
+ip route get "$ADDRESS"
+
+# Show cached IPv4 ARP and IPv6 neighbor-discovery entries.
+# For an off-subnet destination, expect to see the local gateway rather
+# than the destination server.
+ip neighbor show
+
+# Test whether a TCP connection can be established to the selected
+# destination address on port 443. This bypasses another DNS lookup.
+nc -vz -w 5 "$ADDRESS" 443
+
+# Establish TCP and perform a TLS handshake with the selected address.
+# -servername supplies the hostname through TLS SNI.
+openssl s_client \
+  -connect "${ADDRESS}:443" \
+  -servername "$TARGET" \
+  -verify_return_error \
+  -showcerts \
+  </dev/null
+
+# Perform the complete application transaction:
+# DNS resolution, TCP connection, TLS negotiation, and an HTTP request.
+curl --verbose --connect-timeout 5 "https://${TARGET}/"
+```
 
 ### Windows PowerShell observations
 
 Run these in PowerShell against the same authorized target:
 
-```powershell
-$Target = 'example.test'
-$Address = '192.0.2.10'
+```powershell title="Widnows PowerShell"
+$Target = 'reece.ai'
 
-Get-Date -Format o
-Get-NetIPConfiguration
-Resolve-DnsName $Target
-Get-NetNeighbor
-Find-NetRoute -RemoteIPAddress $Address
-Test-NetConnection -ComputerName $Target -Port 443 -InformationLevel Detailed
-curl.exe --verbose --connect-timeout 5 "https://$Target/"
+# Query the target's IPv4 records.
+$DnsResult = Resolve-DnsName `
+    -Name $Target `
+    -Type A `
+    -DnsOnly
+
+# Select the first returned IPv4 address.
+$Address = $DnsResult |
+    Where-Object Type -eq 'A' |
+    Select-Object -First 1 -ExpandProperty IPAddress
+
+# Stop if DNS did not return an IPv4 address.
+if (-not $Address) {
+    throw "No IPv4 address was returned for $Target"
+}
+
+# Confirm the values used by the remaining tests.
+Write-Host "Target:  $Target"
+Write-Host "Address: $Address"
 ```
 
-Set `$Address` to an address returned by `Resolve-DnsName`; the example value
-is reserved for documentation. `curl.exe` is named explicitly so PowerShell
-does not substitute a shell alias on versions where one exists.
+Observe various connection methods from your machine to the `$Target`:
+
+```powershell title="Windows PowerShell"
+# Record the current date and time, including the local UTC offset.
+Get-Date -Format o
+
+# Show the address, gateway, and DNS configuration assigned to each
+# network interface. This does not necessarily show the public IP address.
+Get-NetIPConfiguration
+
+# Display the DNS results used to select the destination address.
+$DnsResult
+
+# Show the route, outgoing interface, next hop, and source address
+# Windows would use to reach the selected destination address.
+Find-NetRoute -RemoteIPAddress $Address
+
+# Show cached IPv4 ARP entries.
+# For an off-subnet destination, expect an entry for the local gateway
+# rather than for the destination server.
+Get-NetNeighbor -AddressFamily IPv4
+
+# Test whether a TCP connection can be established directly to the
+# selected destination address on port 443. Using the address avoids
+# performing another DNS lookup.
+Test-NetConnection `
+    -ComputerName $Address `
+    -Port 443 `
+    -InformationLevel Detailed
+
+# Test the selected address while preserving the hostname for TLS SNI,
+# certificate validation, and the HTTP Host header.
+curl.exe `
+    --verbose `
+    --connect-timeout 5 `
+    --resolve "${Target}:443:${Address}" `
+    "https://${Target}/"
+
+# Perform the complete application transaction using normal resolution:
+# DNS lookup, TCP connection, TLS negotiation, and an HTTP request.
+curl.exe `
+    --verbose `
+    --connect-timeout 5 `
+    "https://${Target}/"
+```
 
 ### What the evidence proves
 
@@ -136,7 +217,7 @@ The rest of this guide runs inside the deterministic Containerlab environment.
 Unless a step explicitly says otherwise, run lifecycle and `make` commands
 from the Lab 01 directory on the Linux host.
 
-## 6. Architecture and addressing
+## Architecture and addressing
 
 Part B uses only Linux containers and freely redistributable images. The
 application will not use the host network or publish HTTPS outside the lab.
@@ -169,7 +250,7 @@ The design must allow captures on both sides of the router so a learner can
 prove whether a SYN left the client, crossed the policy boundary, reached the
 server, and received a returning response.
 
-## 7. Environment validation
+## Environment validation
 
 From the lab directory, run the read-only host check:
 
@@ -180,7 +261,7 @@ make check
 It validates Linux, Docker access, Containerlab, OpenSSL, OpenSSH, Make, and
 the host's forwarding sysctl interface. It does not deploy or change the lab.
 
-## 8. Deployment
+## Deployment
 
 From this lab directory, build the local images and deploy the topology:
 
@@ -200,7 +281,7 @@ No application port is published on the host. Containerlab creates a private
 management network named `lab01-mgmt`; the original HTTPS transaction uses
 only the three data-plane links shown above.
 
-## 9. Known-good baseline
+## Known-good baseline
 
 Run:
 
@@ -221,7 +302,7 @@ The command proves, in order:
 Save this evidence before activating any future scenario. You can repeat the
 original transaction at any time with `make verify`.
 
-## 10. Enter the lab nodes and test the six stages
+## Enter the lab nodes and test the six stages
 
 The lab provides short host-side commands for each node you need to inspect:
 
@@ -370,7 +451,7 @@ curl --verbose \
 That result can isolate DNS from later stages, but it is not proof of repair.
 `make verify` deliberately does not bypass DNS.
 
-## 11. Tasks and checkpoints
+## Tasks and checkpoints
 
 For each scenario:
 
@@ -382,7 +463,7 @@ For each scenario:
 6. Repair the actual state without using `reset`.
 7. Run `make verify` to repeat the original HTTPS transaction.
 
-## 12. Break and troubleshoot scenarios
+## Break and troubleshoot scenarios
 
 The four initial scenarios and all three subsequent scenarios are deterministic,
 idempotent, reversible, and available:
@@ -461,7 +542,7 @@ make test
 
 The test always tears down its topology, including after a failed assertion.
 
-## 13. Scenario solutions
+## Scenario solutions
 
 The solution guides contain spoilers and exact repair steps. Use them after
 completing an investigation or when reviewing collected evidence:
@@ -477,7 +558,7 @@ completing an investigation or when reviewing collected evidence:
 Every scenario currently eligible for challenge mode has a corresponding
 solution document.
 
-## 14. Verification
+## Verification
 
 The command:
 
@@ -490,20 +571,20 @@ requires the expected DNS answer, TCP/443, a trusted certificate with the
 expected identity, and the exact application response. Ping, an open port
 alone, or an arbitrary HTTP response does not count as repair evidence.
 
-## 15. Teardown and cost control
+## Teardown and cost control
 
 Run `make destroy` when finished. It removes only the `lab01` topology, its
 Containerlab directory, and locally generated `.state/` files. It is safe to
 repeat after a partial deployment. No public cloud resources are created. Do
 not use broad Docker cleanup commands on a shared host.
 
-## 16. Troubleshooting the lab environment
+## Troubleshooting the lab environment
 
 Use the repository's [environment troubleshooting guide] for Docker,
 Containerlab, image, permission, or host-kernel problems. Keep those separate
 from the deliberate in-lab faults that form the exercise.
 
-## 17. Related lesson and source links
+## Related lesson and source links
 
 - [The Network Model I Use to Troubleshoot Everything][network model lesson]
 - [Enterprise Networking for Systems Engineers course][course]
