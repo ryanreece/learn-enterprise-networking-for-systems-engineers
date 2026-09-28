@@ -255,7 +255,8 @@ there. Type `exit` to return to the host. These are observations, not a script:
 record what each command proves and stop where the evidence stops.
 
 The login banner summarizes the original transaction and a short set of useful
-commands. Run `lab-help` at any time to display it again.
+commands. Run `help` at any time to display it again. Use `help diagram` to
+print the lab topology or `lab addresses` to print its address table.
 
 ### Stage 1 — Name resolution
 

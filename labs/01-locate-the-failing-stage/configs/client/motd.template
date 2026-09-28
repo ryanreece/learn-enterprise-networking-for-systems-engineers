@@ -4,8 +4,12 @@ Client:       client
 Application:  __APP_NAME__
 Objective:    Locate the first failing stage
 
-Useful commands:
-  lab-help
+Lab commands:
+  help                              Show this message
+  help diagram                      Show the lab topology
+  lab addresses                     Show the lab address table
+
+Useful diagnostics:
   dig __APP_NAME__
   ip route
   ip neighbor

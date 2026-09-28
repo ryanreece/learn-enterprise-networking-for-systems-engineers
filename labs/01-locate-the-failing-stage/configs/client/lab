@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+  '')
+    exec /usr/local/bin/lab-help-command
+    ;;
+  addresses)
+    cat /etc/lab/addresses.txt
+    ;;
+  *)
+    printf 'Usage: lab addresses\n' >&2
+    exit 2
+    ;;
+esac

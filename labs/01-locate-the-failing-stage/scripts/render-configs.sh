@@ -37,9 +37,51 @@ sed \
   -e "s/__APP_PORT__/${APP_PORT}/g" \
   "${LAB_ROOT}/configs/client/motd.template" \
   >"${LAB_STATE_DIR}/client/motd"
-cp --remove-destination -- "${LAB_ROOT}/configs/client/lab-help" \
-  "${LAB_STATE_DIR}/client/lab-help"
-chmod 0555 "${LAB_STATE_DIR}/client/lab-help"
+
+for command_name in help lab; do
+  cp --remove-destination -- \
+    "${LAB_ROOT}/configs/client/${command_name}" \
+    "${LAB_STATE_DIR}/client/${command_name}"
+  chmod 0555 "${LAB_STATE_DIR}/client/${command_name}"
+done
+cp --remove-destination -- "${LAB_ROOT}/configs/client/profile.sh" \
+  "${LAB_STATE_DIR}/client/profile.sh"
+chmod 0444 "${LAB_STATE_DIR}/client/profile.sh"
+
+printf '%s\n' \
+  '[client]' \
+  "  eth2 ${CLIENT_DNS_CIDR} ---- [DNS segment ${DNS_SUBNET}] ---- eth1 ${DNS_CIDR} [dns]" \
+  "  eth1 ${CLIENT_ROUTER_CIDR}" \
+  '       |' \
+  "       |  Client segment ${CLIENT_SUBNET}" \
+  '       |' \
+  "  eth1 ${ROUTER_CLIENT_CIDR} [router/firewall]" \
+  "  eth2 ${ROUTER_APP_CIDR}" \
+  '       |' \
+  "       |  Application segment ${APP_SUBNET}" \
+  '       |' \
+  "  eth1 ${WEB_CIDR} [web / ${APP_NAME}]" \
+  >"${LAB_STATE_DIR}/client/topology.txt"
+
+management_prefix="${LAB_MGMT_SUBNET#*/}"
+{
+  printf '%s\n' \
+    '+--------+------------+-----------------+------------------+' \
+    '| Node   | Interface  | Address         | Network          |' \
+    '+--------+------------+-----------------+------------------+'
+  printf '| %-6s | %-10s | %-15s | %-16s |\n' \
+    client management "${CLIENT_MGMT_IP}/${management_prefix}" "${LAB_MGMT_SUBNET}" \
+    client eth1 "${CLIENT_ROUTER_CIDR}" "${CLIENT_SUBNET}" \
+    client eth2 "${CLIENT_DNS_CIDR}" "${DNS_SUBNET}" \
+    router management "${ROUTER_MGMT_IP}/${management_prefix}" "${LAB_MGMT_SUBNET}" \
+    router eth1 "${ROUTER_CLIENT_CIDR}" "${CLIENT_SUBNET}" \
+    router eth2 "${ROUTER_APP_CIDR}" "${APP_SUBNET}" \
+    dns management "${DNS_MGMT_IP}/${management_prefix}" "${LAB_MGMT_SUBNET}" \
+    dns eth1 "${DNS_CIDR}" "${DNS_SUBNET}" \
+    web management "${WEB_MGMT_IP}/${management_prefix}" "${LAB_MGMT_SUBNET}" \
+    web eth1 "${WEB_CIDR}" "${APP_SUBNET}"
+  printf '%s\n' '+--------+------------+-----------------+------------------+'
+} >"${LAB_STATE_DIR}/client/addresses.txt"
 
 printf '%s\n' \
   "\$ORIGIN ${LAB_ZONE}." \

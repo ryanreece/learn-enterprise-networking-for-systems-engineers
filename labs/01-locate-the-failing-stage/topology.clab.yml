@@ -20,7 +20,11 @@ topology:
       binds:
         - .state/client/resolv.conf:/etc/resolv.conf:ro
         - .state/client/motd:/etc/motd:ro
-        - .state/client/lab-help:/usr/local/bin/lab-help:ro
+        - .state/client/help:/usr/local/bin/lab-help-command:ro
+        - .state/client/lab:/usr/local/bin/lab:ro
+        - .state/client/profile.sh:/etc/profile.d/lab-commands.sh:ro
+        - .state/client/topology.txt:/etc/lab/topology.txt:ro
+        - .state/client/addresses.txt:/etc/lab/addresses.txt:ro
         - .state/certificates/ca.crt:/etc/lab/ca.crt:ro
         - .state/ssh/authorized_keys:/root/.ssh/authorized_keys:ro
         - .state/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
