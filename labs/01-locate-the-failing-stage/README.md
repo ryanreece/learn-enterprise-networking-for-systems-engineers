@@ -7,9 +7,9 @@ collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology and deterministic
-> `dns-failure`, `return-route`, and `policy-drop` scenarios work end to end,
-> including reset and lifecycle tests. The wrong-certificate and
-> challenge-mode slices are not implemented yet.
+> All four initial scenarios—`dns-failure`, `return-route`, `policy-drop`, and
+> `wrong-certificate`—work end to end, including reset and lifecycle tests.
+> Challenge mode and subsequent scenario expansion are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -189,7 +189,7 @@ make deploy
 ```
 
 Deployment generates a lab-only CA, a valid certificate for `app.lab.test`,
-and a deliberately incorrect certificate for a later scenario. It also creates
+and a deliberately incorrect certificate for the TLS scenario. It also creates
 an ephemeral SSH identity for the client. Private keys remain under the ignored
 `.state/` directory. Deployment then creates the isolated topology and applies
 the known-good addresses and routes.
@@ -373,15 +373,15 @@ For each scenario:
 
 ## 12. Break and troubleshoot scenarios
 
-The planned core set contains four deterministic, idempotent, and reversible
-scenarios. Three are currently available:
+The four initial scenarios are deterministic, idempotent, reversible, and
+available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
 | `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
 | `return-route` | Implemented | The request travels forward, but the response cannot return. |
 | `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
-| `wrong-certificate` | Planned | TCP succeeds, but certificate validation for `app.lab.test` fails. |
+| `wrong-certificate` | Implemented | TCP succeeds, but certificate validation for `app.lab.test` fails. |
 
 From the **host terminal**, activate one implemented scenario:
 
@@ -390,6 +390,7 @@ From the **host terminal**, activate one implemented scenario:
 make scenario SCENARIO=dns-failure
 make scenario SCENARIO=return-route
 make scenario SCENARIO=policy-drop
+make scenario SCENARIO=wrong-certificate
 make status
 ```
 
@@ -402,6 +403,7 @@ CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
 reloads it when its SOA serial increases. The application container's route to
 the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
 Router policy can be inspected with `make router` and `nft list ruleset`. Use
+`openssl s_client` from the client to inspect the presented TLS identity. Use
 these only after evidence identifies the relevant stage. `make reset` restores
 and verifies the baseline if you need an escape hatch; it is not the normal
 learner repair.
@@ -423,6 +425,7 @@ completing an investigation or when reviewing collected evidence:
 - [DNS failure solution](solutions/dns-failure.md)
 - [Return-route solution](solutions/return-route.md)
 - [Policy-drop solution](solutions/policy-drop.md)
+- [Wrong-certificate solution](solutions/wrong-certificate.md)
 
 A corresponding solution document will be added with each future scenario.
 
