@@ -53,40 +53,7 @@ OpenSSL, an OpenSSH client, and initial Internet access for packages and
 images. Read the repository [environment requirements], [installation guide],
 and [supported platforms] before attempting it.
 
-## 5. Architecture and addressing
-
-Part B uses only Linux containers and freely redistributable images. The
-application will not use the host network or publish HTTPS outside the lab.
-
-```mermaid
-flowchart LR
-    client["Client<br/>10.10.1.10<br/>10.10.3.10"] --> router["Router / firewall<br/>10.10.1.1 and 10.10.2.1"]
-    router --> web["HTTPS application<br/>10.10.2.10"]
-    client --> dns["DNS<br/>10.10.3.53"]
-```
-
-[`configs/lab.env`](configs/lab.env) is the executable source of truth for
-names, images, and addresses. This table mirrors it for learners.
-
-| Segment or name | Value | Purpose |
-| --- | --- | --- |
-| Client segment | `10.10.1.0/24` | Client-to-router link |
-| Client, routed link | `10.10.1.10` | Origin of the HTTPS transaction |
-| Router, client side | `10.10.1.1` | Application next hop and policy boundary |
-| Application segment | `10.10.2.0/24` | Router-to-server link |
-| Router, application side | `10.10.2.1` | Application-side gateway and observation point |
-| HTTPS application | `10.10.2.10` | TLS and HTTP endpoint |
-| DNS segment | `10.10.3.0/24` | Direct client-to-DNS link |
-| Client, DNS link | `10.10.3.10` | Source of lab DNS queries |
-| DNS | `10.10.3.53` | Lab-local authoritative resolver |
-| Application name | `app.lab.test` | Original transaction hostname |
-| Application service | TCP/443 | Original transaction transport |
-
-The design must allow captures on both sides of the router so a learner can
-prove whether a SYN left the client, crossed the policy boundary, reached the
-server, and received a returning response.
-
-## 6. Part A — Observe a real connection
+## 5. Part A — Observe a real connection
 
 Only test a target you own or are explicitly authorized to test. These steps
 observe state and send ordinary DNS, TCP, TLS, and HTTP requests. They must not
@@ -168,6 +135,39 @@ evidence. Avoid treating ping as proof of HTTPS health.
 The rest of this guide runs inside the deterministic Containerlab environment.
 Unless a step explicitly says otherwise, run lifecycle and `make` commands
 from the Lab 01 directory on the Linux host.
+
+## 6. Architecture and addressing
+
+Part B uses only Linux containers and freely redistributable images. The
+application will not use the host network or publish HTTPS outside the lab.
+
+```mermaid
+flowchart LR
+    client["Client<br/>10.10.1.10<br/>10.10.3.10"] --> router["Router / firewall<br/>10.10.1.1 and 10.10.2.1"]
+    router --> web["HTTPS application<br/>10.10.2.10"]
+    client --> dns["DNS<br/>10.10.3.53"]
+```
+
+[`configs/lab.env`](configs/lab.env) is the executable source of truth for
+names, images, and addresses. This table mirrors it for learners.
+
+| Segment or name | Value | Purpose |
+| --- | --- | --- |
+| Client segment | `10.10.1.0/24` | Client-to-router link |
+| Client, routed link | `10.10.1.10` | Origin of the HTTPS transaction |
+| Router, client side | `10.10.1.1` | Application next hop and policy boundary |
+| Application segment | `10.10.2.0/24` | Router-to-server link |
+| Router, application side | `10.10.2.1` | Application-side gateway and observation point |
+| HTTPS application | `10.10.2.10` | TLS and HTTP endpoint |
+| DNS segment | `10.10.3.0/24` | Direct client-to-DNS link |
+| Client, DNS link | `10.10.3.10` | Source of lab DNS queries |
+| DNS | `10.10.3.53` | Lab-local authoritative resolver |
+| Application name | `app.lab.test` | Original transaction hostname |
+| Application service | TCP/443 | Original transaction transport |
+
+The design must allow captures on both sides of the router so a learner can
+prove whether a SYN left the client, crossed the policy boundary, reached the
+server, and received a returning response.
 
 ## 7. Environment validation
 
