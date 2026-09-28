@@ -6,10 +6,10 @@ Given a failed HTTPS transaction, you will identify the last working stage,
 collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
-> **Implementation status:** the known-good Part B topology and deterministic
-> All four initial scenarios—`dns-failure`, `return-route`, `policy-drop`, and
-> `wrong-certificate`—work end to end, including reset and lifecycle tests.
-> Challenge mode and subsequent scenario expansion are not implemented yet.
+> **Implementation status:** the known-good Part B topology, all four initial
+> scenarios, and the subsequent `local-delivery` scenario work end to end,
+> including reset and lifecycle tests. Challenge mode, `transport-failure`, and
+> `application-failure` are not implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -373,12 +373,13 @@ For each scenario:
 
 ## 12. Break and troubleshoot scenarios
 
-The four initial scenarios are deterministic, idempotent, reversible, and
-available:
+The four initial scenarios and the first subsequent scenario are deterministic,
+idempotent, reversible, and available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
 | `dns-failure` | Implemented | Name resolution fails while the later stages remain healthy. |
+| `local-delivery` | Implemented | The client cannot resolve the configured next hop, so no HTTPS packet leaves it. |
 | `return-route` | Implemented | The request travels forward, but the response cannot return. |
 | `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
 | `wrong-certificate` | Implemented | TCP succeeds, but certificate validation for `app.lab.test` fails. |
@@ -388,6 +389,7 @@ From the **host terminal**, activate one implemented scenario:
 ```bash
 # Choose one scenario.
 make scenario SCENARIO=dns-failure
+make scenario SCENARIO=local-delivery
 make scenario SCENARIO=return-route
 make scenario SCENARIO=policy-drop
 make scenario SCENARIO=wrong-certificate
@@ -402,7 +404,9 @@ host.
 CoreDNS reads its runtime zone from `.state/dns/db.lab.test` on the host and
 reloads it when its SOA serial increases. The application container's route to
 the client subnet can be inspected with `docker exec clab-lab01-web ip route`.
-Router policy can be inspected with `make router` and `nft list ruleset`. Use
+The client's selected next hop and neighbor state can be inspected with
+`ip route get 10.10.2.10` and `ip neighbor` after running `make client`. Router
+policy can be inspected with `make router` and `nft list ruleset`. Use
 `openssl s_client` from the client to inspect the presented TLS identity. Use
 these only after evidence identifies the relevant stage. `make reset` restores
 and verifies the baseline if you need an escape hatch; it is not the normal
@@ -423,6 +427,7 @@ The solution guides contain spoilers and exact repair steps. Use them after
 completing an investigation or when reviewing collected evidence:
 
 - [DNS failure solution](solutions/dns-failure.md)
+- [Local-delivery solution](solutions/local-delivery.md)
 - [Return-route solution](solutions/return-route.md)
 - [Policy-drop solution](solutions/policy-drop.md)
 - [Wrong-certificate solution](solutions/wrong-certificate.md)
