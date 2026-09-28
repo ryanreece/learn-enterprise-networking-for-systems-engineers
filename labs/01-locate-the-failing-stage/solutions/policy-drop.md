@@ -23,9 +23,10 @@ make router
 nft list table inet lab01
 ```
 
-The forward chain contains a counter-bearing drop rule for the HTTPS flow.
-Repeat the client TCP test, then list the table again. Its packet counter
-increases.
+The forward chain contains the known-good established/related and HTTPS allow
+rules plus a counter-bearing drop rule ahead of them. Repeat the client TCP
+test, then list the table again. The drop-rule counter increases while the
+HTTPS allow-rule counter does not.
 
 To locate the boundary precisely, capture the flow on `eth1` and `eth2` in
 separate router sessions:
@@ -58,13 +59,16 @@ interface.
 
 ## Repair
 
-The `lab01` table belongs only to this scenario, so remove that table from the
-**router container**:
+The `lab01` table is the lab's baseline policy, so preserve it and remove only
+the scenario rule. From the **router container**, list rule handles, identify
+the handle on the line whose comment is `lab01-policy-drop`, and delete it:
 
 ```bash
 make router
-nft delete table inet lab01
-nft list ruleset
+nft -a list chain inet lab01 forward
+HANDLE=REPLACE_WITH_DROP_RULE_HANDLE
+nft delete rule inet lab01 forward handle "$HANDLE"
+nft list chain inet lab01 forward
 exit
 ```
 
@@ -76,5 +80,5 @@ make verify
 
 Do not flush the complete ruleset: unrelated Containerlab or Docker-managed
 rules may exist in the namespace. If manual recovery is unsuccessful,
-`make reset` removes the scenario table and restores the complete known-good
-state as an escape hatch.
+`make reset` removes the scenario rule and restores the complete known-good
+policy as an escape hatch.

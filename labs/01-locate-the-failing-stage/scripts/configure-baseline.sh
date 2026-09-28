@@ -40,12 +40,23 @@ docker exec "${WEB_CONTAINER}" \
 # neither the learner host's trust store nor any image layer.
 docker exec "${CLIENT_CONTAINER}" update-ca-certificates >/dev/null
 
-# Scenario-owned policy is isolated in this table so reset does not disturb
-# Containerlab or Docker rules in the router namespace.
+# Recreate only this lab-owned table so reset does not disturb Containerlab or
+# Docker rules in the router namespace. The forward chain is a real allow-list:
+# the original HTTPS flow and its stateful return traffic are explicitly
+# accepted, while unrelated forwarded traffic is dropped.
 if docker exec "${ROUTER_CONTAINER}" \
-  nft list table inet lab01 >/dev/null 2>&1; then
-  docker exec "${ROUTER_CONTAINER}" nft delete table inet lab01
+  nft list table inet "${ROUTER_POLICY_TABLE}" >/dev/null 2>&1; then
+  docker exec "${ROUTER_CONTAINER}" \
+    nft delete table inet "${ROUTER_POLICY_TABLE}"
 fi
+docker exec "${ROUTER_CONTAINER}" \
+  nft add table inet "${ROUTER_POLICY_TABLE}"
+docker exec "${ROUTER_CONTAINER}" nft \
+  "add chain inet ${ROUTER_POLICY_TABLE} ${ROUTER_POLICY_CHAIN} { type filter hook forward priority 0; policy drop; }"
+docker exec "${ROUTER_CONTAINER}" nft \
+  "add rule inet ${ROUTER_POLICY_TABLE} ${ROUTER_POLICY_CHAIN} ct state established,related counter accept comment \"${ROUTER_POLICY_ESTABLISHED_COMMENT}\""
+docker exec "${ROUTER_CONTAINER}" nft \
+  "add rule inet ${ROUTER_POLICY_TABLE} ${ROUTER_POLICY_CHAIN} iifname \"eth1\" oifname \"eth2\" ip saddr ${CLIENT_IP} ip daddr ${WEB_IP} tcp dport ${APP_PORT} ct state new counter accept comment \"${ROUTER_POLICY_HTTPS_COMMENT}\""
 
 # Restore the active certificate files in place because Containerlab bind
 # mounts those exact files into the running NGINX container.

@@ -50,9 +50,8 @@ confirm_failure() {
     return 1
   fi
 
-  if docker exec "${ROUTER_CONTAINER}" \
-    nft list table inet lab01 >/dev/null 2>&1; then
-    printf '%s\n' 'ERROR: scenario-owned router policy changed unexpectedly.' >&2
+  if ! router_baseline_policy_is_active; then
+    printf '%s\n' 'ERROR: baseline router policy changed unexpectedly.' >&2
     return 1
   fi
 

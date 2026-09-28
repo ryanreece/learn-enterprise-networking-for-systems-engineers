@@ -7,8 +7,6 @@ source "${SCENARIO_DIR}/../scripts/common.sh"
 
 readonly ACTIVE_SCENARIO_FILE="${LAB_STATE_DIR}/active-scenario"
 readonly DEBUG_LOG="${LAB_STATE_DIR}/scenario-debug.log"
-readonly POLICY_TABLE=lab01
-readonly POLICY_CHAIN=forward
 readonly POLICY_COMMENT=lab01-policy-drop
 
 confirm_failure() {
@@ -58,7 +56,7 @@ confirm_failure() {
   fi
 
   rule_output="$(docker exec "${ROUTER_CONTAINER}" \
-    nft list chain inet "${POLICY_TABLE}" "${POLICY_CHAIN}")"
+    nft list chain inet "${ROUTER_POLICY_TABLE}" "${ROUTER_POLICY_CHAIN}")"
   if [[ "${rule_output}" != *"comment \"${POLICY_COMMENT}\""* ]]; then
     printf '%s\n' 'ERROR: policy-drop rule is not active.' >&2
     return 1
@@ -102,18 +100,7 @@ confirm_failure() {
   fi
   rm -f -- "${client_side_capture}" "${app_side_capture}"
 
-  rule_output="$(docker exec "${ROUTER_CONTAINER}" \
-    nft list chain inet "${POLICY_TABLE}" "${POLICY_CHAIN}")"
-  packet_count="$(awk -v comment="${POLICY_COMMENT}" '
-    index($0, "comment \"" comment "\"") {
-      for (field = 1; field <= NF; field++) {
-        if ($field == "packets") {
-          print $(field + 1)
-          exit
-        }
-      }
-    }
-  ' <<<"${rule_output}")"
+  packet_count="$(router_policy_rule_packet_count "${POLICY_COMMENT}")"
   if [[ ! "${packet_count}" =~ ^[0-9]+$ ]] || ((packet_count < 1)); then
     printf '%s\n' 'ERROR: policy-drop counter did not record the failed flow.' >&2
     return 1
@@ -135,11 +122,8 @@ apply_failure() {
   wait_for_dns_service
   "${LAB_SCRIPT_DIR}/verify.sh" >/dev/null
 
-  docker exec "${ROUTER_CONTAINER}" nft add table inet "${POLICY_TABLE}"
   docker exec "${ROUTER_CONTAINER}" nft \
-    "add chain inet ${POLICY_TABLE} ${POLICY_CHAIN} { type filter hook forward priority 0; policy accept; }"
-  docker exec "${ROUTER_CONTAINER}" nft \
-    "add rule inet ${POLICY_TABLE} ${POLICY_CHAIN} ip saddr ${CLIENT_IP} ip daddr ${WEB_IP} tcp dport ${APP_PORT} counter drop comment \"${POLICY_COMMENT}\""
+    "insert rule inet ${ROUTER_POLICY_TABLE} ${ROUTER_POLICY_CHAIN} iifname \"eth1\" oifname \"eth2\" ip saddr ${CLIENT_IP} ip daddr ${WEB_IP} tcp dport ${APP_PORT} counter drop comment \"${POLICY_COMMENT}\""
 
   printf '%s\n' policy-drop >"${ACTIVE_SCENARIO_FILE}"
   printf '%s policy-drop: installed nftables rule %s for %s to %s TCP/%s\n' \

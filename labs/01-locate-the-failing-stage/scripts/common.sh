@@ -24,6 +24,10 @@ readonly CLIENT_CONTAINER="clab-${LAB_NAME}-client"
 readonly ROUTER_CONTAINER="clab-${LAB_NAME}-router"
 readonly DNS_CONTAINER="clab-${LAB_NAME}-dns"
 readonly WEB_CONTAINER="clab-${LAB_NAME}-web"
+readonly ROUTER_POLICY_TABLE=lab01
+readonly ROUTER_POLICY_CHAIN=forward
+readonly ROUTER_POLICY_ESTABLISHED_COMMENT=lab01-established-allow
+readonly ROUTER_POLICY_HTTPS_COMMENT=lab01-https-allow
 readonly -a LAB_SCENARIOS=(
   dns-failure
   local-delivery
@@ -74,6 +78,35 @@ require_lab_node() {
 
 run_on_client() {
   docker exec "${CLIENT_CONTAINER}" "$@"
+}
+
+router_baseline_policy_is_active() {
+  local rule_output
+
+  rule_output="$(docker exec "${ROUTER_CONTAINER}" \
+    nft list chain inet "${ROUTER_POLICY_TABLE}" "${ROUTER_POLICY_CHAIN}" \
+    2>/dev/null || true)"
+  [[ "${rule_output}" == *'policy drop;'* \
+    && "${rule_output}" == *"comment \"${ROUTER_POLICY_ESTABLISHED_COMMENT}\""* \
+    && "${rule_output}" == *"comment \"${ROUTER_POLICY_HTTPS_COMMENT}\""* ]]
+}
+
+router_policy_rule_packet_count() {
+  local comment="$1"
+  local rule_output
+
+  rule_output="$(docker exec "${ROUTER_CONTAINER}" \
+    nft list chain inet "${ROUTER_POLICY_TABLE}" "${ROUTER_POLICY_CHAIN}")"
+  awk -v comment="${comment}" '
+    index($0, "comment \"" comment "\"") {
+      for (field = 1; field <= NF; field++) {
+        if ($field == "packets") {
+          print $(field + 1)
+          exit
+        }
+      }
+    }
+  ' <<<"${rule_output}"
 }
 
 web_service_is_running() {

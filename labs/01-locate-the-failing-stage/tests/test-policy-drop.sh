@@ -5,6 +5,8 @@ TEST_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../scripts/common.sh
 source "${TEST_DIR}/../scripts/common.sh"
 
+policy_output=''
+
 cleanup() {
   "${LAB_SCRIPT_DIR}/destroy.sh" >/dev/null 2>&1 || true
 }
@@ -28,9 +30,15 @@ fi
 "${LAB_SCRIPT_DIR}/reset.sh"
 "${LAB_SCRIPT_DIR}/verify.sh"
 
-if docker exec "${ROUTER_CONTAINER}" \
-  nft list table inet lab01 >/dev/null 2>&1; then
-  printf '%s\n' 'ERROR: reset left the scenario nftables table in place.' >&2
+if ! router_baseline_policy_is_active; then
+  printf '%s\n' 'ERROR: reset did not restore the baseline router policy.' >&2
+  exit 1
+fi
+
+policy_output="$(docker exec "${ROUTER_CONTAINER}" \
+  nft list chain inet "${ROUTER_POLICY_TABLE}" "${ROUTER_POLICY_CHAIN}")"
+if [[ "${policy_output}" == *'comment "lab01-policy-drop"'* ]]; then
+  printf '%s\n' 'ERROR: reset left the scenario drop rule in place.' >&2
   exit 1
 fi
 

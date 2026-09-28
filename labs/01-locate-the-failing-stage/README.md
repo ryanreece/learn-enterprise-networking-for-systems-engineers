@@ -37,7 +37,7 @@ intended public [course] and [lab page] URLs must be confirmed before release.
 | Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
 | Last-tested tools | Containerlab 0.79.0, Docker Engine 27.5.1, OpenSSL 3.0.13 |
 | Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
-| Last baseline and scenario test | September 27, 2026 |
+| Last baseline and scenario test | September 28, 2026 |
 
 The known-good baseline and every named scenario passed on this reference
 environment. The lab remains in development until challenge mode and a clean
@@ -210,11 +210,13 @@ make baseline
 
 The command proves, in order:
 
-1. `app.lab.test` resolves to `10.10.2.10`.
+1. Router forwarding and the explicit HTTPS allow-list policy are active.
 2. The selected route crosses the router/firewall.
-3. TCP/443 completes.
-4. TLS presents the expected identity and validates against the lab CA.
-5. HTTPS returns the expected application response.
+3. `app.lab.test` resolves to `10.10.2.10`.
+4. TCP/443 completes.
+5. TLS presents the expected identity and validates against the lab CA.
+6. HTTPS returns the expected application response.
+7. The router's HTTPS allow-rule counter records the verified flow.
 
 Save this evidence before activating any future scenario. You can repeat the
 original transaction at any time with `make verify`.
@@ -313,11 +315,17 @@ make router
 Then inspect policy and connection tracking inside the **router container**:
 
 ```bash
+nft list table inet lab01
 nft list ruleset
 conntrack -L -p tcp
 tcpdump -ni eth1 'host 10.10.2.10 and tcp port 443'
 tcpdump -ni eth2 'host 10.10.1.10 and tcp port 443'
 ```
+
+The known-good `inet lab01` table has a default-drop forward chain, an
+established/related return rule, and a counter-bearing rule that explicitly
+permits the client-to-application TCP/443 flow. Repeating the client connection
+test increases those counters.
 
 Compare the client-side and application-side interfaces. Stop each capture
 with Ctrl-C and type `exit` to return to the host.
