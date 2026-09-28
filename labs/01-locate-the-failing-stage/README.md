@@ -7,9 +7,9 @@ collect evidence at the failing boundary, repair the actual fault, and verify
 the original transaction from name resolution through the application.
 
 > **Implementation status:** the known-good Part B topology, all four initial
-> scenarios, `local-delivery`, and `transport-failure` work end to end,
-> including reset and lifecycle tests. Challenge mode and
-> `application-failure` are not implemented yet.
+> scenarios, `local-delivery`, `transport-failure`, and `application-failure`
+> work end to end, including reset and lifecycle tests. Challenge mode is not
+> implemented yet.
 
 ## 2. Relationship to the Reece.AI lesson
 
@@ -31,7 +31,7 @@ intended public [course] and [lab page] URLs must be confirmed before release.
 
 | Attribute | Current value |
 | --- | --- |
-| Estimated time | To be measured after the failure scenarios are implemented |
+| Estimated time | Not yet measured on a clean learner walkthrough |
 | Cost | No cloud cost; local compute, storage, and download usage only |
 | Level | Foundational |
 | Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
@@ -39,8 +39,9 @@ intended public [course] and [lab page] URLs must be confirmed before release.
 | Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
 | Last baseline and scenario test | September 27, 2026 |
 
-The known-good baseline passed on this reference environment. The lab is not
-complete or published until every failure scenario passes the full lifecycle.
+The known-good baseline and every named scenario passed on this reference
+environment. The lab remains in development until challenge mode and a clean
+learner walkthrough are complete.
 
 ## 4. Prerequisites and supported platforms
 
@@ -373,8 +374,8 @@ For each scenario:
 
 ## 12. Break and troubleshoot scenarios
 
-The four initial scenarios and the first two subsequent scenarios are
-deterministic, idempotent, reversible, and available:
+The four initial scenarios and all three subsequent scenarios are deterministic,
+idempotent, reversible, and available:
 
 | Scenario | Status | Learner-visible boundary |
 | --- | --- | --- |
@@ -384,6 +385,7 @@ deterministic, idempotent, reversible, and available:
 | `policy-drop` | Implemented | Correctly routed HTTPS traffic is silently dropped at the policy boundary. |
 | `transport-failure` | Implemented | The application host rejects TCP/443 because no HTTPS listener is running. |
 | `wrong-certificate` | Implemented | TCP succeeds, but certificate validation for `app.lab.test` fails. |
+| `application-failure` | Implemented | DNS through TLS succeed, but HTTPS returns status 500. |
 
 From the **host terminal**, activate one implemented scenario:
 
@@ -395,6 +397,7 @@ make scenario SCENARIO=return-route
 make scenario SCENARIO=policy-drop
 make scenario SCENARIO=transport-failure
 make scenario SCENARIO=wrong-certificate
+make scenario SCENARIO=application-failure
 make status
 ```
 
@@ -410,10 +413,12 @@ The client's selected next hop and neighbor state can be inspected with
 `ip route get 10.10.2.10` and `ip neighbor` after running `make client`. Router
 policy can be inspected with `make router` and `nft list ruleset`. The HTTPS
 service process and configuration can be inspected after running `make server`.
-Use `openssl s_client` from the client to inspect the presented TLS identity.
-Use these only after evidence identifies the relevant stage. `make reset`
-restores and verifies the baseline if you need an escape hatch; it is not the
-normal learner repair.
+The rendered active and known-good application configurations are
+`.state/web/nginx.conf` and `.state/web/baseline-nginx.conf` on the host. Use
+`openssl s_client` from the client to inspect the presented TLS identity. Use
+these only after evidence identifies the relevant stage. `make reset` restores
+and verifies the baseline if you need an escape hatch; it is not the normal
+learner repair.
 
 Maintainers can exercise deployment, two consecutive applications of each
 scenario, failure assertions, reset, verification, and teardown with:
@@ -435,6 +440,7 @@ completing an investigation or when reviewing collected evidence:
 - [Policy-drop solution](solutions/policy-drop.md)
 - [Transport-failure solution](solutions/transport-failure.md)
 - [Wrong-certificate solution](solutions/wrong-certificate.md)
+- [Application-failure solution](solutions/application-failure.md)
 
 A corresponding solution document will be added with each future scenario.
 
