@@ -17,6 +17,11 @@ help_output="$(docker exec "${CLIENT_CONTAINER}" sh -lc help)"
 lab_output="$(docker exec "${CLIENT_CONTAINER}" sh -lc lab)"
 diagram_output="$(docker exec "${CLIENT_CONTAINER}" sh -lc 'help diagram')"
 addresses_output="$(docker exec "${CLIENT_CONTAINER}" sh -lc 'lab addresses')"
+trusted_response="$(docker exec "${CLIENT_CONTAINER}" curl \
+  --silent \
+  --show-error \
+  --fail \
+  "https://${APP_NAME}:${APP_PORT}/")"
 sshd_config="$(docker exec "${CLIENT_CONTAINER}" sshd -T)"
 
 if [[ "${help_output}" != "${motd}" ]]; then
@@ -26,6 +31,11 @@ fi
 
 if [[ "${lab_output}" != "${motd}" ]]; then
   printf '%s\n' 'ERROR: bare lab did not reproduce the client welcome message.' >&2
+  exit 1
+fi
+
+if [[ "${trusted_response}" != "${EXPECTED_RESPONSE}" ]]; then
+  printf '%s\n' 'ERROR: plain curl did not trust the generated lab CA.' >&2
   exit 1
 fi
 
@@ -40,7 +50,7 @@ for expected_text in \
   "  dig ${APP_NAME}" \
   '  ip route' \
   '  ip neighbor' \
-  "  curl -v --cacert /etc/lab/ca.crt https://${APP_NAME}/" \
+  "  curl -v https://${APP_NAME}/" \
   "  openssl s_client -connect ${APP_NAME}:${APP_PORT} -servername ${APP_NAME}"; do
   if ! grep -Fqx -- "${expected_text}" <<<"${motd}"; then
     printf 'ERROR: client welcome message is missing: %s\n' \
@@ -99,4 +109,4 @@ fi
 "${LAB_SCRIPT_DIR}/destroy.sh"
 trap - EXIT
 
-printf '%s\n' 'Client welcome-message test passed.'
+printf '%s\n' 'Client welcome-message and trust test passed.'

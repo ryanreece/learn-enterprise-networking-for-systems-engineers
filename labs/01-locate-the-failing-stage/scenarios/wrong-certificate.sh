@@ -52,7 +52,6 @@ confirm_failure() {
   chain_output="$(run_on_client openssl s_client \
     -connect "${APP_NAME}:${APP_PORT}" \
     -servername "${APP_NAME}" \
-    -CAfile /etc/lab/ca.crt \
     -verify_return_error </dev/null 2>&1 || true)"
   if [[ "${chain_output}" != *'Verify return code: 0 (ok)'* ]]; then
     printf '%s\n' 'ERROR: the incorrect certificate is not signed by the lab CA.' >&2
@@ -62,7 +61,6 @@ confirm_failure() {
   tls_output="$(run_on_client openssl s_client \
     -connect "${APP_NAME}:${APP_PORT}" \
     -servername "${APP_NAME}" \
-    -CAfile /etc/lab/ca.crt \
     -verify_hostname "${APP_NAME}" \
     -verify_return_error </dev/null 2>&1 || true)"
   if [[ "${tls_output}" != *'hostname mismatch'* ]]; then
@@ -87,7 +85,6 @@ confirm_failure() {
     --show-error \
     --fail \
     --connect-timeout 3 \
-    --cacert /etc/lab/ca.crt \
     "https://${APP_NAME}:${APP_PORT}/" >/dev/null 2>&1; then
     printf '%s\n' 'ERROR: validated HTTPS unexpectedly accepted the wrong certificate.' >&2
     return 1

@@ -36,6 +36,10 @@ docker exec "${CLIENT_CONTAINER}" \
 docker exec "${WEB_CONTAINER}" \
   ip route replace "${CLIENT_SUBNET}" via "${ROUTER_APP_IP}"
 
+# Trust the generated lab-only CA inside the disposable client. This changes
+# neither the learner host's trust store nor any image layer.
+docker exec "${CLIENT_CONTAINER}" update-ca-certificates >/dev/null
+
 # Scenario-owned policy is isolated in this table so reset does not disturb
 # Containerlab or Docker rules in the router namespace.
 if docker exec "${ROUTER_CONTAINER}" \

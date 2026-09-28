@@ -26,6 +26,7 @@ topology:
         - .state/client/topology.txt:/etc/lab/topology.txt:ro
         - .state/client/addresses.txt:/etc/lab/addresses.txt:ro
         - .state/certificates/ca.crt:/etc/lab/ca.crt:ro
+        - .state/certificates/ca.crt:/usr/local/share/ca-certificates/reece-ai-lab01-ca.crt:ro
         - .state/ssh/authorized_keys:/root/.ssh/authorized_keys:ro
         - .state/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
         - .state/ssh/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro

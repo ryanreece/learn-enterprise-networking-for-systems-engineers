@@ -26,7 +26,6 @@ Certificate identity and trust validation also succeed:
 openssl s_client \
   -connect app.lab.test:443 \
   -servername app.lab.test \
-  -CAfile /etc/lab/ca.crt \
   -verify_hostname app.lab.test \
   -verify_return_error </dev/null
 ```
@@ -36,7 +35,6 @@ Inspect the complete HTTPS result without suppressing error responses:
 ```bash
 curl --silent \
   --show-error \
-  --cacert /etc/lab/ca.crt \
   --write-out '\nHTTP %{http_code}\n' \
   https://app.lab.test/
 ```

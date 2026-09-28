@@ -192,8 +192,9 @@ make deploy
 Deployment generates a lab-only CA, a valid certificate for `app.lab.test`,
 and a deliberately incorrect certificate for the TLS scenario. It also creates
 an ephemeral SSH identity for the client. Private keys remain under the ignored
-`.state/` directory. Deployment then creates the isolated topology and applies
-the known-good addresses and routes.
+`.state/` directory. Deployment then creates the isolated topology, trusts the
+lab-only CA inside the disposable client container, and applies the known-good
+addresses and routes. It does not change the host's certificate trust store.
 
 No application port is published on the host. Containerlab creates a private
 management network named `lab01-mgmt`; the original HTTPS transaction uses
@@ -339,17 +340,15 @@ identity, trust, or the expected application response.
 openssl s_client \
   -connect 10.10.2.10:443 \
   -servername app.lab.test \
-  -CAfile /etc/lab/ca.crt \
   -verify_hostname app.lab.test \
   -verify_return_error </dev/null
 
-curl --verbose \
-  --cacert /etc/lab/ca.crt \
-  https://app.lab.test/
+curl --verbose https://app.lab.test/
 ```
 
-OpenSSL explicitly checks the expected name and lab trust chain. Curl repeats
-the original transaction, including DNS, TCP, TLS validation, and HTTP.
+OpenSSL explicitly checks the expected name and lab trust chain through the
+client's system trust store. Curl repeats the original transaction, including
+DNS, TCP, TLS validation, and HTTP.
 
 When DNS is suspect, this **diagnostic bypass** holds the destination address
 constant while retaining the correct TLS name:
@@ -357,7 +356,6 @@ constant while retaining the correct TLS name:
 ```bash
 curl --verbose \
   --resolve app.lab.test:443:10.10.2.10 \
-  --cacert /etc/lab/ca.crt \
   https://app.lab.test/
 ```
 

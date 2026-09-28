@@ -144,7 +144,6 @@ wait_for_https_response() {
       --show-error \
       --connect-timeout 1 \
       --max-time 2 \
-      --cacert /etc/lab/ca.crt \
       --write-out '|%{http_code}' \
       "https://${APP_NAME}:${APP_PORT}/" 2>/dev/null || true)"
     http_code="${output##*|}"

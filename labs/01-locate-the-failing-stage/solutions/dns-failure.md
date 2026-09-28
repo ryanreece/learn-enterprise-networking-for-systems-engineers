@@ -27,7 +27,6 @@ nc -vz -w 3 10.10.2.10 443
 
 curl --verbose \
   --resolve app.lab.test:443:10.10.2.10 \
-  --cacert /etc/lab/ca.crt \
   https://app.lab.test/
 ```
 

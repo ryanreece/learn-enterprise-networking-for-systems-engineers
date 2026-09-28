@@ -54,7 +54,6 @@ confirm_failure() {
   tls_output="$(run_on_client openssl s_client \
     -connect "${APP_NAME}:${APP_PORT}" \
     -servername "${APP_NAME}" \
-    -CAfile /etc/lab/ca.crt \
     -verify_hostname "${APP_NAME}" \
     -verify_return_error </dev/null 2>&1 || true)"
   if [[ "${tls_output}" != *'Verify return code: 0 (ok)'* ]]; then

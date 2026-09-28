@@ -13,5 +13,5 @@ Useful diagnostics:
   dig __APP_NAME__
   ip route
   ip neighbor
-  curl -v --cacert /etc/lab/ca.crt https://__APP_NAME__/
+  curl -v https://__APP_NAME__/
   openssl s_client -connect __APP_NAME__:__APP_PORT__ -servername __APP_NAME__

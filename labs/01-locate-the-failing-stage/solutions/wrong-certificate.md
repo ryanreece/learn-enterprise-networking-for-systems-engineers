@@ -31,7 +31,6 @@ hostname:
 openssl s_client \
   -connect app.lab.test:443 \
   -servername app.lab.test \
-  -CAfile /etc/lab/ca.crt \
   -verify_return_error </dev/null
 ```
 
@@ -42,7 +41,6 @@ hostname makes validation fail specifically with `hostname mismatch`:
 openssl s_client \
   -connect app.lab.test:443 \
   -servername app.lab.test \
-  -CAfile /etc/lab/ca.crt \
   -verify_hostname app.lab.test \
   -verify_return_error </dev/null
 ```

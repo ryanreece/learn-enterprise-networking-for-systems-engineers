@@ -37,7 +37,8 @@ test_label() {
 
 test_commands \
   "${NETWORK_TOOLBOX_IMAGE}" \
-  bash dig curl ip ping traceroute nc openssl sshd ssh-keygen tcpdump
+  bash dig curl ip ping traceroute nc openssl sshd ssh-keygen tcpdump \
+  update-ca-certificates
 
 test_commands \
   "${LINUX_ROUTER_IMAGE}" \
