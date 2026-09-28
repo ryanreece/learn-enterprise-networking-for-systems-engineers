@@ -65,6 +65,7 @@ destroy: ## Remove only this lab's topology and generated state.
 	@./scripts/destroy.sh
 
 test: build ## Exercise the implemented scenario lifecycle.
+	@./tests/test-client-welcome.sh
 	@./tests/test-dns-failure.sh
 	@./tests/test-return-route.sh
 	@./tests/test-policy-drop.sh

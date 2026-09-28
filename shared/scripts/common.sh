@@ -6,7 +6,7 @@ REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 
 readonly SCRIPT_DIR
 readonly REPOSITORY_ROOT
-readonly NETWORK_TOOLBOX_IMAGE="${NETWORK_TOOLBOX_IMAGE:-reeceai-course/network-toolbox:0.2.0}"
+readonly NETWORK_TOOLBOX_IMAGE="${NETWORK_TOOLBOX_IMAGE:-reeceai-course/network-toolbox:0.3.0}"
 readonly LINUX_ROUTER_IMAGE="${LINUX_ROUTER_IMAGE:-reeceai-course/linux-router:0.1.0}"
 
 require_command() {

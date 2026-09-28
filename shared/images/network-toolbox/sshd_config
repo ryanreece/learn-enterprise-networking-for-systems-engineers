@@ -8,5 +8,5 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
 AllowUsers root
-PrintMotd no
+PrintMotd yes
 Subsystem sftp internal-sftp

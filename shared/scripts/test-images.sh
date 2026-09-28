@@ -58,7 +58,12 @@ docker run \
   --cap-drop ALL \
   --entrypoint /bin/sh \
   "${NETWORK_TOOLBOX_IMAGE}" \
-  -euc 'ssh-keygen -A >/dev/null 2>&1; mkdir -p /run/sshd; sshd -t'
+  -euc '
+    ssh-keygen -A >/dev/null 2>&1
+    mkdir -p /run/sshd
+    sshd -t
+    grep -Fx "PrintMotd yes" /etc/ssh/sshd_config >/dev/null
+  '
 
 printf 'Testing toolbox capability boundary\n'
 docker run \

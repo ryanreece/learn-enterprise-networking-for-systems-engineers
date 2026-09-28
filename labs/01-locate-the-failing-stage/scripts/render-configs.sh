@@ -32,6 +32,15 @@ mkdir -p "${LAB_STATE_DIR}/certificates" \
 printf 'nameserver %s\noptions attempts:1 timeout:1\n' "${DNS_IP}" \
   >"${LAB_STATE_DIR}/client/resolv.conf"
 
+sed \
+  -e "s/__APP_NAME__/${APP_NAME}/g" \
+  -e "s/__APP_PORT__/${APP_PORT}/g" \
+  "${LAB_ROOT}/configs/client/motd.template" \
+  >"${LAB_STATE_DIR}/client/motd"
+cp --remove-destination -- "${LAB_ROOT}/configs/client/lab-help" \
+  "${LAB_STATE_DIR}/client/lab-help"
+chmod 0555 "${LAB_STATE_DIR}/client/lab-help"
+
 printf '%s\n' \
   "\$ORIGIN ${LAB_ZONE}." \
   "\$TTL 60" \

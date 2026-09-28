@@ -1,0 +1,13 @@
+Reece.AI Enterprise Networking Lab
+
+Client:       client
+Application:  __APP_NAME__
+Objective:    Locate the first failing stage
+
+Useful commands:
+  lab-help
+  dig __APP_NAME__
+  ip route
+  ip neighbor
+  curl -v --cacert /etc/lab/ca.crt https://__APP_NAME__/
+  openssl s_client -connect __APP_NAME__:__APP_PORT__ -servername __APP_NAME__
