@@ -44,10 +44,8 @@ if docker exec "${ROUTER_CONTAINER}" \
 fi
 
 # Restore the active certificate files in place because Containerlab bind
-# mounts those exact files into the running NGINX container. Avoid a redundant
-# reload: back-to-back reload signals can be coalesced before the first worker
-# transition finishes.
-certificate_reloaded=false
+# mounts those exact files into the running NGINX container.
+certificate_changed=false
 if ! cmp -s \
   "${LAB_STATE_DIR}/certificates/valid-server.crt" \
   "${LAB_STATE_DIR}/certificates/server.crt" \
@@ -58,11 +56,22 @@ if ! cmp -s \
     "${LAB_STATE_DIR}/certificates/server.crt"
   cp -- "${LAB_STATE_DIR}/certificates/valid-server.key" \
     "${LAB_STATE_DIR}/certificates/server.key"
-  docker exec "${WEB_CONTAINER}" nginx -t >/dev/null
-  docker exec "${WEB_CONTAINER}" nginx -s reload
-  certificate_reloaded=true
+  certificate_changed=true
 fi
-if [[ "${certificate_reloaded}" == true ]]; then
+
+docker exec "${WEB_CONTAINER}" nginx -t >/dev/null
+if web_service_is_running; then
+  if [[ "${certificate_changed}" == true ]]; then
+    # Avoid redundant reloads: back-to-back signals can be coalesced before
+    # the first worker transition finishes.
+    docker exec "${WEB_CONTAINER}" nginx -s reload
+  fi
+else
+  docker exec "${WEB_CONTAINER}" nginx
+  certificate_changed=true
+fi
+
+if [[ "${certificate_changed}" == true ]]; then
   wait_for_tls_identity "${APP_NAME}" 4
 else
   wait_for_tls_identity "${APP_NAME}"

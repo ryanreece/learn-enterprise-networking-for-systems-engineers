@@ -46,6 +46,7 @@ topology:
     web:
       image: ${WEB_IMAGE}
       mgmt-ipv4: ${WEB_MGMT_IP}
+      cmd: sh -c 'nginx; exec tail -f /dev/null'
       cap-add:
         - NET_ADMIN
         - NET_BIND_SERVICE

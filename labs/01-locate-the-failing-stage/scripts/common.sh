@@ -39,6 +39,12 @@ run_on_client() {
   docker exec "${CLIENT_CONTAINER}" "$@"
 }
 
+web_service_is_running() {
+  docker exec "${WEB_CONTAINER}" sh -c \
+    'test -s /tmp/nginx.pid && kill -0 "$(cat /tmp/nginx.pid)"' \
+    >/dev/null 2>&1
+}
+
 wait_for_dns_service() {
   local resolved_address
 
