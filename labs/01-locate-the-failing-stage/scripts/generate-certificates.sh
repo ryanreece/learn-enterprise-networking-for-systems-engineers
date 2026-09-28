@@ -12,6 +12,8 @@ readonly WRONG_EXT="${CERTIFICATE_DIR}/wrong-server.ext"
 required_files=(
   ca.crt
   ca.key
+  valid-server.crt
+  valid-server.key
   server.crt
   server.key
   wrong-server.crt
@@ -78,8 +80,12 @@ generate_server_certificate() {
   rm -f -- "${temporary_directory}/${file_prefix}.csr"
 }
 
-generate_server_certificate server "${APP_NAME}" 0x1001 "${VALID_EXT}"
+generate_server_certificate valid-server "${APP_NAME}" 0x1001 "${VALID_EXT}"
 generate_server_certificate wrong-server "${WRONG_APP_NAME}" 0x1002 "${WRONG_EXT}"
+cp -- "${temporary_directory}/valid-server.crt" \
+  "${temporary_directory}/server.crt"
+cp -- "${temporary_directory}/valid-server.key" \
+  "${temporary_directory}/server.key"
 chmod 600 "${temporary_directory}"/*.key
 
 mv -- "${VALID_EXT}" "${temporary_directory}/valid-server.ext"

@@ -8,7 +8,8 @@ source "${LAB_SCRIPT_DIR}/common.sh"
 scenario_name="${1:-}"
 if [[ -z "${scenario_name}" ]]; then
   printf '%s\n' 'ERROR: set SCENARIO to a supported scenario.' >&2
-  printf '%s\n' 'Supported scenarios: dns-failure, return-route, policy-drop' >&2
+  printf '%s\n' \
+    'Supported scenarios: dns-failure, return-route, policy-drop, wrong-certificate' >&2
   exit 2
 fi
 
@@ -22,9 +23,13 @@ case "${scenario_name}" in
   policy-drop)
     "${LAB_ROOT}/scenarios/policy-drop.sh" apply
     ;;
+  wrong-certificate)
+    "${LAB_ROOT}/scenarios/wrong-certificate.sh" apply
+    ;;
   *)
     printf 'ERROR: unsupported scenario: %s\n' "${scenario_name}" >&2
-    printf '%s\n' 'Supported scenarios: dns-failure, return-route, policy-drop' >&2
+    printf '%s\n' \
+      'Supported scenarios: dns-failure, return-route, policy-drop, wrong-certificate' >&2
     exit 2
     ;;
 esac

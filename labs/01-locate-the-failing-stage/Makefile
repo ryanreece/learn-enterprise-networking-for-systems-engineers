@@ -64,3 +64,4 @@ test: build ## Exercise the implemented scenario lifecycle.
 	@./tests/test-dns-failure.sh
 	@./tests/test-return-route.sh
 	@./tests/test-policy-drop.sh
+	@./tests/test-wrong-certificate.sh

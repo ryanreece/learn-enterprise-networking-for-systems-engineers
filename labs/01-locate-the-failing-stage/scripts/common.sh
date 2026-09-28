@@ -58,3 +58,23 @@ wait_for_dns_service() {
   printf '%s\n' 'ERROR: the lab DNS service did not become ready.' >&2
   return 1
 }
+
+wait_for_tls_identity() {
+  local expected_name="$1"
+  local certificate_details
+
+  for _ in {1..20}; do
+    certificate_details="$(run_on_client openssl s_client \
+      -connect "${WEB_IP}:${APP_PORT}" \
+      -servername "${APP_NAME}" </dev/null 2>/dev/null \
+      | openssl x509 -noout -ext subjectAltName 2>/dev/null || true)"
+    if [[ "${certificate_details}" == *"DNS:${expected_name}"* ]]; then
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  printf 'ERROR: HTTPS did not present the expected certificate identity: %s.\n' \
+    "${expected_name}" >&2
+  return 1
+}
