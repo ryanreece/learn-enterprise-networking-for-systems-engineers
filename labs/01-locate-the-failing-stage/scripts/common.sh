@@ -27,6 +27,7 @@ readonly WEB_CONTAINER="clab-${LAB_NAME}-web"
 readonly ROUTER_POLICY_TABLE=lab01
 readonly ROUTER_POLICY_CHAIN=forward
 readonly ROUTER_POLICY_ESTABLISHED_COMMENT=lab01-established-allow
+readonly ROUTER_POLICY_ICMP_COMMENT=lab01-icmp-allow
 readonly ROUTER_POLICY_HTTPS_COMMENT=lab01-https-allow
 readonly -a LAB_SCENARIOS=(
   dns-failure
@@ -88,6 +89,7 @@ router_baseline_policy_is_active() {
     2>/dev/null || true)"
   [[ "${rule_output}" == *'policy drop;'* \
     && "${rule_output}" == *"comment \"${ROUTER_POLICY_ESTABLISHED_COMMENT}\""* \
+    && "${rule_output}" == *"comment \"${ROUTER_POLICY_ICMP_COMMENT}\""* \
     && "${rule_output}" == *"comment \"${ROUTER_POLICY_HTTPS_COMMENT}\""* ]]
 }
 

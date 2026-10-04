@@ -32,7 +32,7 @@ The investigation follows six stages:
 | Last-tested host | Ubuntu 24.04.5 LTS, Linux 6.17, x86_64 |
 | Last-tested tools | Containerlab 0.79.0, Docker Engine 27.5.1, OpenSSL 3.0.13 |
 | Service images | CoreDNS 1.14.7, NGINX 1.30.5 on Alpine 3.24 |
-| Last baseline and scenario test | September 28, 2026 |
+| Last baseline and scenario test | October 4, 2026 |
 
 The known-good baseline and every named scenario passed on this reference
 environment. The lab remains in development until challenge mode and a clean
@@ -245,6 +245,7 @@ names, images, and addresses. This table mirrors it for learners.
 | DNS | `10.10.3.53` | Lab-local authoritative resolver |
 | Application name | `app.lab.test` | Original transaction hostname |
 | Application service | TCP/443 | Original transaction transport |
+| Diagnostic echo | ICMP echo request/reply | Client-to-application reachability test |
 
 The design must allow captures on both sides of the router so a learner can
 prove whether a SYN left the client, crossed the policy boundary, reached the
@@ -291,13 +292,14 @@ make baseline
 
 The command proves, in order:
 
-1. Router forwarding and the explicit HTTPS allow-list policy are active.
+1. Router forwarding and the explicit ICMP and HTTPS allow-list policy are active.
 2. The selected route crosses the router/firewall.
-3. `app.lab.test` resolves to `10.10.2.10`.
-4. TCP/443 completes.
-5. TLS presents the expected identity and validates against the lab CA.
-6. HTTPS returns the expected application response.
-7. The router's HTTPS allow-rule counter records the verified flow.
+3. ICMP echo requests receive replies from the application.
+4. `app.lab.test` resolves to `10.10.2.10`.
+5. TCP/443 completes.
+6. TLS presents the expected identity and validates against the lab CA.
+7. HTTPS returns the expected application response.
+8. The router's ICMP and HTTPS allow-rule counters record the verified flows.
 
 Save this evidence before activating any future scenario. You can repeat the
 original transaction at any time with `make verify`.
@@ -369,12 +371,15 @@ path.
 
 ```bash
 ip route get 10.10.2.10
+ping -c 3 10.10.2.10
 traceroute -n -T -p 443 10.10.2.10
 ```
 
-The route lookup should select `10.10.1.1` on `eth1`; TCP traceroute should
-show the router and application. A route existing locally does not prove the
-return path works.
+The route lookup should select `10.10.1.1` on `eth1`; ping should receive echo
+replies; and TCP traceroute should show the router and application. ICMP echo
+success proves bidirectional IP reachability for that exchange, not that
+TCP/443, TLS, or the application is healthy. A route existing locally does not
+prove the return path works.
 
 ### Stage 4 — Policy and translation
 
@@ -404,9 +409,9 @@ tcpdump -ni eth2 'host 10.10.1.10 and tcp port 443'
 ```
 
 The known-good `inet lab01` table has a default-drop forward chain, an
-established/related return rule, and a counter-bearing rule that explicitly
-permits the client-to-application TCP/443 flow. Repeating the client connection
-test increases those counters.
+established/related return rule, and counter-bearing rules that explicitly
+permit client-to-application ICMP echo requests and the TCP/443 flow. Repeating
+the corresponding client tests increases those counters.
 
 Compare the client-side and application-side interfaces. Stop each capture
 with Ctrl-C and type `exit` to return to the host.
